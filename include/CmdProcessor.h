@@ -12,6 +12,7 @@
 #ifndef C_O_M_M_A_N_D_S__H
 #define C_O_M_M_A_N_D_S__H
 #include "Arduino.h"
+#include "Stream.h"
 
 #define CMD_BUF_DEFAULT_LEN 128
 #define MAX_ARG_CNT     10
@@ -28,11 +29,12 @@ class CmdProcessor {
         int nextArgNo;
 
     public:
-    CmdProcessor(); // initialize.
+    CmdProcessor(Stream *_iostream); // initialize.
     ~CmdProcessor();
     void loop(); // attempt to read - and process - the next command
     static void help(int argcnt, char **argList);
     static int getInt(const char *target);
+    Stream *myIO; // Pointer to the stream that handles IO for this command processor. (Serial?)
 };
 
 #endif

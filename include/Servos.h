@@ -7,12 +7,14 @@
  *
  * @copyright Copyright (c) 2024
  *
+ *  This version is based on using the PCA9685 16-channel driver (Adafruit P/N 815)
+ * and their library: 
  */
 
 #ifndef S_E_R_V_O_S__H
 #define S_E_R_V_O_S__H
-#include <ESP32Servo.h>
-
+#include <Wire.h>
+#include "Adafruit_PWMServoDriver.h"
 /**
  * @brief The number of 'real' servos
  * this excludes the EYES and NOD types, which
@@ -21,20 +23,22 @@
  */
 #define NUMBER_OF_SERVOS 5
 
-
 class Servos
 {
 private:
+    Adafruit_PWMServoDriver *pwm;
     struct 
-    {
-        Servo servo; // the servo being refrenced.
+    {        
         int min;  // phys minimum limit in microseconds (coresponds to 0 degrees)
         int max;  // phys maximum limit in microseconds (corresponds to 180 degrees)        
+        int servoPosition; // where is this plugged in?
     } servoList[NUMBER_OF_SERVOS];
+    void setPulseWidthuSecs(uint8_t pos, double pw);
+    double pulseLength;      // length of a pulse, in uSecs per bit...
 
 public:
     typedef enum ServoId
-    {
+    {   // these are internal indexs, NOT servo positions!
         S_LEFT=0,  // Left Platform lift
         S_RIGHT=1, // Right Platform lift
         S_LEYE=2,  // left eye
@@ -43,11 +47,13 @@ public:
         // Combinations:
         S_EYES=5,  // both eyes together
         S_NOD=6,   // Both left AND right motion (NOD)
-        S_NONE=7,  // No servo (or error decoding the servo name)
+        S_TILT=7,  // Tilt left-right
+        S_NONE=8,  // No servo (or error decoding the servo name)
     } ServoId_t;
 
     Servos(int left, int right, int leye, int reye, int rot);
     ~Servos();
+
     bool setMinMax(ServoId_t id, int min, int max);
     ServoId_t decodeId(const char *str);
 

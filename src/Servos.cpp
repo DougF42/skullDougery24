@@ -14,33 +14,38 @@
 /**
  * @brief Construct a new Kinemetics object
  *
- * @param left - pin number for left sero
- * @param right - pin number for right servo
- * @param leye  - pin number for left eye
- * @param reye  - pin number for right eye
- * @param rot   - pin number for rotate.
+ * @param left -  position number for left sero
+ * @param right - position number for  right servo
+ * @param leye  - position number for  left eye
+ * @param reye  - position number for  right eye
+ * @param rot   - position number for  rotate.
  */
-Servos::Servos(int leftPin, int rightPin, int leyePin, int reyePin, int rotPin)
+#define SERVO_FREQ 50
+Servos::Servos(int leftPos, int rightPos, int leyePos, int reyePos, int rotPos)
 {
     int minUs = 500; // default time limits
     int maxUs = 2600;
-    for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
-    {
-        ESP32PWM::allocateTimer(idx);
-    }
+    pwm= new Adafruit_PWMServoDriver();   // Initialize the servo PWM driver
+    pwm->setOscillatorFrequency(27000000);
+    pwm->setPWMFreq(SERVO_FREQ);  // Analog servos run at ~50 Hz updates
+    pulseLength= (1000000 / SERVO_FREQ) /4096; // 4096 = 12 bit resolution...
+    delay(10);
+
+
+    servoList[S_LEFT].servoPosition = leftPos;
+    servoList[S_RIGHT].servoPosition = rightPos;
+    servoList[S_LEYE].servoPosition  = leyePos;
+    servoList[S_REYE].servoPosition  = reyePos;
+    servoList[S_ROTATE].servoPosition = rotPos;    
 
     for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
     {
-        servoList[idx].servo.setPeriodHertz(5);
         servoList[idx].min = 0;
         servoList[idx].max = 180;
+
     }
 
-    servoList[S_LEFT].servo.attach(leftPin, minUs, maxUs);
-    servoList[S_RIGHT].servo.attach(rightPin, minUs, maxUs);
-    servoList[S_REYE].servo.attach(leyePin, minUs, maxUs);
-    servoList[S_LEYE].servo.attach(reyePin, minUs, maxUs);
-    servoList[S_REYE].servo.attach(rotPin, minUs, maxUs);
+
 }
 
 /**
@@ -49,11 +54,9 @@ Servos::Servos(int leftPin, int rightPin, int leyePin, int reyePin, int rotPin)
  */
 Servos::~Servos()
 {
-    for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
-    {
-        servoList[idx].servo.detach();
-    }
+
 }
+
 
 /**
  * @brief [INTERNAL] Decode the string to determine what servo is named
@@ -152,21 +155,31 @@ bool Servos::setServo(ServoId_t id, int pos)
     case (S_REYE):
     case (S_ROTATE):
         res = map(pos, 0, 180, servoList[id].min, servoList[id].max);
-        servoList[id].servo.write(res);
+        pwm->writeMicroseconds( servoList[id].servoPosition, res);
         break;
 
-    case (S_NOD): // combine left and right servos
+    case (S_NOD): // combine left and right servos to NOD.
+    // TODO: 
         res = map(pos, 0, 180, servoList[S_LEFT].min, servoList[id].max);
-        servoList[S_LEFT].servo.write(res);
+        pwm->writeMicroseconds( servoList[S_LEFT].servoPosition,res);
         res = map(pos, 0, 180, servoList[S_RIGHT].min, servoList[id].max);
-        servoList[S_RIGHT].servo.write(res);
+        pwm->writeMicroseconds( servoList[S_RIGHT].servoPosition,res);
+        break;
+
+    case(S_TILT):
+    // TODO:
+        res = map(pos, 0, 180, servoList[S_LEFT].min, servoList[id].max);
+        pwm->writeMicroseconds( servoList[S_LEFT].servoPosition,res);
+        res = map(pos, 0, 180, servoList[S_RIGHT].min, servoList[id].max);
+        pwm->writeMicroseconds( servoList[S_RIGHT].servoPosition,res);
         break;
 
     case (S_EYES): // combine left and right eyes
+    // TODO:
         res = map(pos, 0, 180, servoList[S_LEYE].min, servoList[id].max);
-        servoList[S_LEYE].servo.write(res);
+        pwm->writeMicroseconds( servoList[S_LEYE].servoPosition,res);
         res = map(pos, 0, 180, servoList[S_REYE].min, servoList[id].max);
-        servoList[S_REYE].servo.write(res);
+        pwm->writeMicroseconds( servoList[S_REYE].servoPosition,res);
         break;
 
     case (S_NONE):
@@ -185,23 +198,24 @@ bool Servos::setServo(ServoId_t id, int pos)
  */
 int Servos::readServo(ServoId_t id)
 {
-    if (id > 4) return(-1);
-    int res = servoList[id].servo.read();
-    return( map( res, 0, 180, servoList[id].min, servoList[id].max) );    
+    int res=0;
+    if (id > 4)
+        return (-1);
+    //int res = servoList[id]read();
+    return (map(res, 0, 180, servoList[id].min, servoList[id].max));
 }
 
+void Servos::getLimitsCmd(int argcnt, char **argList)
+{
+    // TODO:
+}
 
-    void Servos::getLimitsCmd(int argcnt, char **argList)
-    {
-        // TODO:
-    }
+void Servos::setLimitsCmd(int argcnt, char **argList)
+{
+    // TODO:
+}
 
-    void Servos::setLimitsCmd(int argcnt, char **argList)
-    {
-        // TODO:
-    }
-
-    void Servos::setServoCmd(int argcnt,  char **argList)
-    {
-        // TODO:
-    }
+void Servos::setServoCmd(int argcnt, char **argList)
+{
+    // TODO:
+}

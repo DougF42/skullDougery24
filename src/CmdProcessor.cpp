@@ -44,8 +44,9 @@ static cmd_t cmdlist[] ={
  *
  *
  */
-CmdProcessor::CmdProcessor()
+CmdProcessor::CmdProcessor(Stream *_iostream)
 {
+    myIO=_iostream;
     cmdBufNxt = 0;
     nextArgNo = 0;
 }
