@@ -7,45 +7,63 @@
  *
  * @copyright Copyright (c) 2024
  *
+ * This drives the servos thru the Adafruit 815 (PCA9685) servo
+ *    driver.
+ * Commands use an integer percent of full - level is at 50 (50 percent)
  */
 
 #include "Servos.h"
 
+// Perfect for servos - 50 hz
+#define SERVO_FREQ 50
+
+// Adjust this to get a real 50 HZ pulse rate.
+#define OCILLATOR_ADJUST 27000000
+bool   Servos::alreadyInited = false;
+Adafruit_PWMServoDriver *Servos::pwm=nullptr;
+Servos::ServoList_t Servos::servoList[NUMBER_OF_SERVOS];
+
 /**
  * @brief Construct a new Kinemetics object
  *
- * @param left -  position number for left sero
- * @param right - position number for  right servo
+ * @param left -  position number for left piston sero
+ * @param right - position number for  right psiton servo
  * @param leye  - position number for  left eye
  * @param reye  - position number for  right eye
  * @param rot   - position number for  rotate.
  */
-#define SERVO_FREQ 50
-Servos::Servos(int leftPos, int rightPos, int leyePos, int reyePos, int rotPos)
+void Servos::begin(int leftPos, int rightPos, int leyePos, int reyePos, int rotPos)
 {
+    noInterrupts();
+    if (alreadyInited)
+    {
+        interrupts();
+        return;
+    }
+    alreadyInited = true;
+    interrupts();
+
     int minUs = 500; // default time limits
     int maxUs = 2600;
     pwm= new Adafruit_PWMServoDriver();   // Initialize the servo PWM driver
     pwm->setOscillatorFrequency(27000000);
     pwm->setPWMFreq(SERVO_FREQ);  // Analog servos run at ~50 Hz updates
-    pulseLength= (1000000 / SERVO_FREQ) /4096; // 4096 = 12 bit resolution...
     delay(10);
 
 
-    servoList[S_LEFT].servoPosition = leftPos;
-    servoList[S_RIGHT].servoPosition = rightPos;
-    servoList[S_LEYE].servoPosition  = leyePos;
-    servoList[S_REYE].servoPosition  = reyePos;
-    servoList[S_ROTATE].servoPosition = rotPos;    
+    servoList[S_LEFT].servoNumber = leftPos;
+    servoList[S_RIGHT].servoNumber = rightPos;
+    servoList[S_LEYE].servoNumber  = leyePos;
+    servoList[S_REYE].servoNumber  = reyePos;
+    servoList[S_ROTATE].servoNumber = rotPos;    
 
     for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
     {
-        servoList[idx].min = 0;
-        servoList[idx].max = 180;
-
+        servoList[idx].minLimit = 430;
+        servoList[idx].maxLimit = 2600;
+        servoList[idx].home     = ( servoList[idx].maxLimit+servoList[idx].minLimit)/2 + servoList[idx].minLimit;
     }
-
-
+    setHome(S_NONE);
 }
 
 /**
@@ -72,150 +90,273 @@ Servos::ServoId_t Servos::decodeId(const char *str)
         res = S_LEFT;
     else if (0 == strcasecmp(str, "RIGHT"))
         res = S_RIGHT;
-    else if (0 == strcasecmp(str, "NOD"))
-        res = S_NOD;
     else if (0 == strcasecmp(str, "LEYE"))
         res = S_LEYE;
     else if (0 == strcasecmp(str, "REYE"))
         res = S_REYE;
-    else if (0 == strcasecmp(str, "EYES"))
-        res = S_EYES;
     else if (0 == strcasecmp(str, "ROT"))
         res = S_ROTATE;
     return (res);
 }
 
 /**
- * @brief Define the range of allowed physical motion (in degrees)
- *
- * @param id  - identifies the servo(s) to set
- * @param min - the minimum angle in degrees
- * @param max - the max angle in degrees
- * @return true  - normal return
- * @return false - error return
+ * @brief Override for 'setLimits' - this one does not require a 'home'
+ *   (It calculates Home as the midpoint between min and max)
+ * @param id       ID of the servo
+ * @param minUsecs Minimum period
+ * @param maxUsecs Maximum period
+ * @return true normally, false if minUsecs >= maxUsecs
  */
-bool Servos::setMinMax(ServoId_t id, int min_, int max_)
+bool Servos::setLimits(ServoId_t id, uint16_t minUsecs,  uint16_t maxUsecs)
 {
-    if (min_ >= max_)
-        return (false);
+    // NOTE: We dont do any parameter checking here - the full setLimits
+    //       does it for us.
+    uint16_t homeUsecs =  (maxUsecs-minUsecs)/2 + minUsecs;
+    return(setLimits(id, minUsecs, maxUsecs, homeUsecs));
+}
 
-    if (max_ <= 0)
-        return (false);
-
-    switch (id)
-    {
-    case (S_LEFT): // Single Servos
-    case (S_RIGHT):
-    case (S_LEYE):
-    case (S_REYE):
-    case (S_ROTATE):
-        servoList[id].min = min_;
-        servoList[id].max = max_;
-        break;
-
-    case (S_NOD): // Combined RIGHT and LEFT tilt
-        servoList[S_RIGHT].min = min_;
-        servoList[S_RIGHT].max = max_;
-        servoList[S_RIGHT].min = min_;
-        servoList[S_LEFT].max = max_;
-        servoList[S_LEFT].min = min_;
-        break;
-
-    case (S_EYES): // Combined Eyes
-        servoList[S_REYE].min = min_;
-        servoList[S_REYE].max = max_;
-        servoList[S_LEYE].min = min_;
-        servoList[S_LEYE].max = max_;
-
-    case (S_NONE):
-        return (false);
-    }
+/**
+ * @brief Set new limits. Does NOT change current position
+ * 
+ * @param id        ID of the servo
+ * @param minUsecs  Minimum period (in uSecs)
+ * @param maxUsecs  Maximum period (in uSecs)
+ * @param homeUsecs Home position (in uSecs).  If 0xffff, then calculate home as midpoint
+ * @return true normally, false if min >= max, OR home Not between min and max.
+ */
+bool Servos::setLimits(ServoId_t id, uint16_t minUsecs,  uint16_t maxUsecs, uint16_t homeUsecs)
+{
+    if ( minUsecs >= maxUsecs) return(false);
+    if ((homeUsecs < minUsecs) || (homeUsecs>maxUsecs)) return(false);
+    servoList[id].minLimit = minUsecs;
+    servoList[id].maxLimit = maxUsecs;
+    servoList[id].home     = homeUsecs;
     return(true);
 }
 
 /**
- * @brief Set the indicated servo to a position
+ * @brief Define the range of allowed physical motion (in degrees)
  *
+ * @param id  - identifies the servo(s) to set.
+ * @param min - the minimum pulse width (uSecs). Must be 50 up to max_.
+ * @param home - the 'center' or 'home' position (uSecs).
+ * @param max - the max pulse width (uSecs). Must be greater than min_
+ * 
+ * @return true  - normal return
+ * @return false - error return - illegal ID or invalid min_ / max_ args
+ */
+bool Servos::setMinMaxCtr(ServoId_t id, int min_, int home_, int max_)
+{
+    bool res = false;
+    if ((min_ >= max_)||(min_<50))
+        return (res);
+
+    if (max_ <= 0)
+        return (res);
+
+    if ((id == S_LEFT) || (id == S_RIGHT) || (id == S_LEYE) || (id = S_REYE) || (id == S_ROTATE))
+    {
+        servoList[id].minLimit = min_;
+        servoList[id].home     = home_;
+        servoList[id].maxLimit = max_;
+        res = true;
+    }
+
+    return (res);
+}
+
+void Servos::setHome()
+{
+    int index;
+    ServoId_t id;
+    // This iterates over the ServoId_t enum list.
+    // ServoId_t must start at 0, and be contiguous up to NUMBER_OF_SERVOS
+    index = 0;
+    for (index=0; index < NUMBER_OF_SERVOS; index++)
+    {
+        id = static_cast<ServoId_t>(index);
+        setServo(id, servoList[id].home);
+    }
+}
+
+/**
+ * @brief Set the servo (or all servoes) to home
+ *
+ * @param id  - servo to set. S_NONE means all servos
+ */
+void Servos::setHome(ServoId_t id)
+{
+    setServo(id, servoList[id].home);
+}
+
+/**
+ * @brief Set the indicated servo to a position (in uSecs)
+ *    (  used for maintenence)
  * @param id <ServoId_t>- name of servo to set
- * @param pos desired position (in degrees... 0 >= pos >= 180). 90 is middle of range
+ * @param pos desired position (in uSecs))
  * @return true - normal.
  * @return false - error in input
  */
-bool Servos::setServo(ServoId_t id, int pos)
+void Servos::setServo(ServoId_t id, int _pos_uSecs)
 {
-    // translate the requested position into the real position, based
-    // on the per-servo limits.
-    int res;
+    uint16_t target = _pos_uSecs;
+    if (target < servoList[id].minLimit)
+        target = servoList[id].minLimit;
 
-    switch (id)
-    {
-    case (S_LEFT): // Single servos
-    case (S_RIGHT):
-    case (S_LEYE):
-    case (S_REYE):
-    case (S_ROTATE):
-        res = map(pos, 0, 180, servoList[id].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[id].servoPosition, res);
-        break;
+    if (target < servoList[id].maxLimit)
+        target = servoList[id].maxLimit;
+// Convert uSecs to 4096 (2^12) count
 
-    case (S_NOD): // combine left and right servos to NOD.
-    // TODO: 
-        res = map(pos, 0, 180, servoList[S_LEFT].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[S_LEFT].servoPosition,res);
-        res = map(pos, 0, 180, servoList[S_RIGHT].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[S_RIGHT].servoPosition,res);
-        break;
-
-    case(S_TILT):
-    // TODO:
-        res = map(pos, 0, 180, servoList[S_LEFT].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[S_LEFT].servoPosition,res);
-        res = map(pos, 0, 180, servoList[S_RIGHT].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[S_RIGHT].servoPosition,res);
-        break;
-
-    case (S_EYES): // combine left and right eyes
-    // TODO:
-        res = map(pos, 0, 180, servoList[S_LEYE].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[S_LEYE].servoPosition,res);
-        res = map(pos, 0, 180, servoList[S_REYE].min, servoList[id].max);
-        pwm->writeMicroseconds( servoList[S_REYE].servoPosition,res);
-        break;
-
-    case (S_NONE):
-        return (false);
-    }
-    return (true);
+    pwm->writeMicroseconds(servoList[id].servoNumber, target);
+    servoList[id].curPos = target;
+    return;
 }
 
 
 /**
  * @brief Return the current setting of the microcontroller
- * 
- * @param id - the ID of the servo. ONLY SINGLE SERVOS ARE ACCEPTED!
+ *
+ * @param id - the ID of the servo.
  * @return int The current angle (in degrees). This is based
  *       on the min..max range. -1 if id is a combination servo.
  */
-int Servos::readServo(ServoId_t id)
+int Servos::getServoUsecs(ServoId_t id)
 {
     int res=0;
     if (id > 4)
         return (-1);
-    //int res = servoList[id]read();
-    return (map(res, 0, 180, servoList[id].min, servoList[id].max));
+    return(servoList[id].curPos);
 }
 
-void Servos::getLimitsCmd(int argcnt, char **argList)
+
+/**
+ * @brief Get  the current servo setting as a percentage
+ * 
+ * @param id - the ID of the servo. 
+ * @return int The current servo setting (as a percent of min->max)
+ */
+int Servos::getServoPcnt(ServoId_t id)
 {
-    // TODO:
+        int res = map(servoList[id].curPos, servoList[id].minLimit, servoList[id].maxLimit, 0, 100);
+        if (res<0) res=0;
+        if (res>100) res=100;
+        return(res);
 }
 
-void Servos::setLimitsCmd(int argcnt, char **argList)
+
+
+void Servos::getLimitsCmd(CmdProcessor *me, int argcnt, char **argList)
 {
-    // TODO:
+    Servos::ServoId id = decodeId(argList[1]);
+    if (id==S_NONE)
+    {
+        // TOOD: Report error
+        me->myIO->print("Unknown servo name '");
+        me->myIO->print(argList[1]);
+        me->myIO->println("' ");
+        return;
+    }
+    me->myIO->print("MIN:  ");me->myIO->print(servoList[id].minLimit);
+    me->myIO->print("HOME: ");me->myIO->print(servoList[id].home);
+    me->myIO->print("MAX:  "); me->myIO->print(servoList[id].maxLimit);
+    me->myIO->println(" ");
+    return;
 }
 
-void Servos::setServoCmd(int argcnt, char **argList)
+
+/**
+ * @brief process the commadn to Set the limits 
+ * 
+ * @param argcnt  4 OR 5
+ * @param argList  <cmd> <servoName> <minuSecs> <maxuSecs> [<homeuSecs>]
+ *     if home is ommitted, then home is 1/2 way between min and max
+ */
+void Servos::setLimitsCmd(CmdProcessor *me, int argcnt, char **argList)
 {
-    // TODO:
+    Servos::ServoId id = decodeId(argList[1]);
+    if (id==S_NONE)
+    {
+        // TOOD: Report error
+        me->myIO->print("Unknown servo name '");
+        me->myIO->print(argList[1]);
+        me->myIO->println("' ");
+        return;
+    }
+    // decode values
+    uint16_t minUsecs = me->getInt(argList[2]);
+    uint16_t maxUsecs = me->getInt(argList[3]);  
+    if (minUsecs <= maxUsecs)
+    {
+        // TODO: ERROR
+        me->myIO->println("Error: min MUST be less than MAX limit!");
+        return;
+    }
+
+
+    if (argcnt == 5)
+    {
+        uint16_t homeUsecs = me->getInt(argList[4]);
+        if ( (homeUsecs > maxUsecs) || (homeUsecs < minUsecs) )
+        {
+            me->myIO->println("Error: home MUST be between min and max limits");
+            return;
+        }
+        setLimits(id, minUsecs, maxUsecs, homeUsecs );        
+    } else {
+        setLimits(id, minUsecs, maxUsecs ); 
+    }
+    return;
 }
+
+
+/**
+ * @brief process the command to set the servo to a given percentage
+ * 
+ * @param argcnt  must be 3
+ * @param argList <cmd> <servoName> <percentage>
+ */
+void Servos::setServoCmd(CmdProcessor *me, int argcnt, char **argList)
+{
+    Servos::ServoId id=decodeId( argList[1]);
+    if (id==S_NONE)
+    {
+        // TOOD: Report error
+        me->myIO->print("Unknown servo name '");
+        me->myIO->print(argList[1]);
+        me->myIO->println("' ");
+        return;
+    }
+
+    // TODO: Get value int pcnt = decodeValue(argList[2])
+    int target = me->getInt(argList[2]);
+    if ( (target <0) || (target>100) )
+    {
+        me->myIO->println("position value out of range (0-100)!");
+        return;
+    }
+    setServo(id, target);
+}
+
+
+/**
+ * @brief Command to get the Servo position as a percentage 
+ * Note: The actual percentage is calculated, but reflects
+ *       actual pulse width vrs current limits.
+ * 
+ * @param id    - the ID of the Servo
+ * @return int  - the percentage (0...100)
+ */
+void Servos::getServoPcntCmd (CmdProcessor *me,int argcnt, char **argList)
+    {
+        Servos::ServoId id = decodeId(argList[1]);
+        if (id == S_NONE)
+        {
+            // TOOD: Report error
+            me->myIO->print("Unknown servo name '");
+            me->myIO->print(argList[1]);
+            me->myIO->println("' ");
+            return;
+        }
+
+        me->myIO->println(getServoPcnt(id));
+    }

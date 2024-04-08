@@ -27,7 +27,7 @@ typedef struct
     const char *name;  // Tha name of the actual command
     const char *descr; // This is the associated help
 
-    void (*command)(int argcnt, char **argList); // the command to invoke.
+    void (*command)(CmdProcessor *me, int argcnt, char **argList); // the command to invoke.
 } cmd_t;
 
 static cmd_t cmdlist[] ={
@@ -63,19 +63,18 @@ CmdProcessor::~CmdProcessor()
  * This works by walking the 'cmdlist' array.
  *
  */
-void CmdProcessor::help(int argcnt, char **argList)
+void CmdProcessor::help(CmdProcessor *me, int argcnt, char **argList)
 {
     cmd_t *thisCmd = nullptr;
 
     for (thisCmd = cmdlist; thisCmd->minTokenCount >= 0; thisCmd++)
     {
-        Serial.print("  ");
-        Serial.print(thisCmd->name);
-        Serial.print("  ");
-        Serial.println(thisCmd->descr);
+        me->myIO->print("  ");
+        me->myIO->print(thisCmd->name);
+        me->myIO->print("  ");
+        me->myIO->println(thisCmd->descr);
     }
 }
-
 
 
 /**
@@ -115,9 +114,9 @@ int CmdProcessor::getInt(const char *target) {
 void CmdProcessor::loop()
 {
     // Get all the available characters
-    while (Serial.available() > 0)
+    while (myIO->available() > 0)
     {
-        int ch = Serial.read();
+        int ch = myIO->read();
         if (ch == '\b')
         { // delete prev char, if any
             if (cmdBufNxt > 0)
@@ -125,20 +124,20 @@ void CmdProcessor::loop()
                 cmdBufNxt--;
                 if (cmdBufNxt < 0)
                     cmdBufNxt = 0;
-                Serial.print('\b');
+                myIO->print('\b');
             }
         }
 
         else if (ch == '?')
         { // Force help message
-            Serial.println(" ");
-            help( 0, nullptr);
+            myIO->println(" ");
+            help(this, 0, nullptr);            
         }
 
         else if (ch == '\n')
         {                                // end of line - process command
             cmdBuffer[cmdBufNxt] = '\0'; // ensure null terminator
-            Serial.println(" ");
+            myIO->println(" ");
             tokenizeBuffer();
             if (nextArgNo >= 1)  processCommand();
             cmdBufNxt = 0;
@@ -146,14 +145,14 @@ void CmdProcessor::loop()
 
         else if (cmdBufNxt > cmdBufLen)
         {
-            Serial.println("***BUFFER OVERFLOW ****");
+            myIO->println("***BUFFER OVERFLOW ****");
         }
 
         else
         {
             // add char to buffer and echo it
             cmdBuffer[cmdBufNxt++] = ch;
-            Serial.print(ch);
+            myIO->print(ch);
         }
     } // while more chars
     return;
@@ -193,7 +192,7 @@ void CmdProcessor::processCommand() {
 	cmd_t *cmd = nullptr;
 	if (nextArgNo==0)
 		{
-			Serial.println("EMPTY LINE??");
+			myIO->println("EMPTY LINE??");
 			return; // empty list
 		}
 
@@ -205,7 +204,7 @@ void CmdProcessor::processCommand() {
 		// We see the command name - check argument count.
 			if ((nextArgNo >= cmd->minTokenCount) && (nextArgNo <= cmd->maxTokenCount)) {
 				// Run the command!
-				cmd->command( nextArgNo, dummyArgList);
+				cmd->command( this, nextArgNo, dummyArgList);
 				return;   // go no futher...
 			} else {
 				wrongNumberOfArgs=true;
@@ -215,11 +214,11 @@ void CmdProcessor::processCommand() {
 
 	// If we got down here, its a 'bad' command
 	if (wrongNumberOfArgs) {
-		Serial.print("Wrong number of arguments for '");
-		Serial.print(dummyArgList[0]);
-		Serial.println("' command.");
+		myIO->print("Wrong number of arguments for '");
+		myIO->print(dummyArgList[0]);
+		myIO->println("' command.");
 	} else {
-		Serial.println("Unknown command");
+		myIO->println("Unknown command");
 	}
 
 }
