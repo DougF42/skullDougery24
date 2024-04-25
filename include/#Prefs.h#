@@ -1,0 +1,53 @@
+/**
+ * @file Prefs.h
+ * @author Doug Fajardo (doug.fajardo@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2024-04-25
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ * Store prefrences.
+ */
+#include <Arduino.h>
+#include <Preferences.h>
+#include "Utilities.h"
+
+#ifndef P_R_E_F_S__H
+#define P_R_E_F_S__H
+
+extern int errno;
+class Prefs {
+    private:
+        static Preferences *myPrefs;
+        static bool alreadyInited;
+
+    public:
+        Prefs();
+        ~Prefs();
+        static void begin();          // This initializes the prefrences system.
+        static void Prefs::resetToDefaults();
+
+        // Get and Set...
+        static String wifiSSID();
+        static void wifiSSID(String str);
+
+        static String wifiPass();
+        static void wifiPass(String str);
+  :
+#define LPOLE_MIN_NAME     "LPOLE_MIN"
+#define RPOLE_MIN_NAME      "RPOLE_MIN"
+#define JAW_MIN_NAME       "JAW_MIN"
+#define LEYE_MIN_NAME      "LEYE_MIN"
+#define REYE_MIN_NAME      "REYE_MIN"
+#define ROTATE_MIN_NAME    "ROT_MIN"
+
+#define LPOLE_MAX_NAME     "LPOLE_MAX"
+#define RPOEL_MAX_NAME      "RPOLE_MAX"
+#define JAW_MAX_NAME       "JAW_MAX"
+#define LEYE_MAX_NAME      "LEYE_MAX"
+#define REYE_MAX_NAME      "REYE_MAX"
+#define ROTATE_MAX_NAME    "ROT_MAX"
+
+};
+#endif

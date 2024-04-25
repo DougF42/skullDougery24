@@ -1,7 +1,10 @@
 
 /**
  * @brief Implement Kinematics class
- * 
+ *   Note: This does calculations assuming
+ * that the servos run a percentage range of 0...100.
+ *   (The 'Servo' class will convert the percentage
+ * into actual PWM settings)
  */
 #include "Kinematics.h"
 

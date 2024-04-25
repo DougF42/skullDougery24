@@ -6,7 +6,8 @@
  * @date 2024-02-23
  *
  * @copyright Copyright (c) 2024
- *
+ * This is implemented once per I/O channel.
+ * It invokes 'static' members of kinematics to implement motion.
  */
 
 #include <string.h>
@@ -76,32 +77,6 @@ void CmdProcessor::help(CmdProcessor *me, int argcnt, char **argList)
     }
 }
 
-
-/**
- * @brief: helper function to convert a string to an integer.
- *   (this function is static, available to command processors everywhere)
- *
- *   This converts a string to a signed integer.
- *
- * The 'errno' global variable is set by this routine;
- * -can return EINVAL if the conversion failed.
- * -can return ERANGE if the result is out-of-range for
- * a signed int
- *
- * @target - point to the string to convert.
- * @return - the converted value. Also, errno is always set.
- *
- */
-int CmdProcessor::getInt(const char *target) {
-	errno = 0;
-	long l = strtol(target, nullptr, 10);
-
-	if ((errno == 0) && ((l < INT_MIN) || (l > INT_MAX))) {
-		errno = ERANGE; // wont fit in integer
-	}
-
-	return ((int)l);
-}
 
 
 /**
