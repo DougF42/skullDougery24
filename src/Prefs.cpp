@@ -75,6 +75,7 @@ bool Prefs::alreadyInited = false;
      {
          Serial.println("Preferences.begin was successful");
      }
+     // IF we don't have at least the SSID, initialize our prefrences
      if ( !myPrefs->isKey(WIFI_SSID_NAME)) resetToDefaults();
  } // end of begin
 
@@ -85,6 +86,7 @@ bool Prefs::alreadyInited = false;
   */
  void Prefs::resetToDefaults()
  {
+   myPrefs->clear();
    wifiSSID(WIFI_SSID);
    wifiPass(WIFI_PASS);
 
@@ -102,6 +104,34 @@ bool Prefs::alreadyInited = false;
    SET_REYE_MAX(REYE_MAX);
    SET_ROTATE_MAX(ROTATE_MIN);
  }
+
+
+/**
+ * @brief Report the current prefrences
+ *   for security, we do NOT show the actual password UNLESS
+ *    the 1st open (after the command) is 'show'
+ * @param io    - pointer to io stream to report on
+ * @param argc  - number of arguments (1) normally. 
+ * @param argv  - list of tokens - only one (the command name)
+ */
+void Prefs::cmd_prefs(Stream *io, int argc, char **argv )
+{
+  io->println("PREFRENCES:");
+  io->print("SSID:"); io->println( wifiSSID());
+  if ( ( argc==2) && (0==strcasecmp(argv[1], "SHOW")) )
+  {
+    io->print("Pass:"); io->println( wifiPass());
+  }
+  io->print("LPOLE: "); io->println(GET_LPOLE_MIN() ) ;io->print(" "); io->println(GET_LPOLE_MAX());
+  io->print("RPOLE: "); io->println(GET_RPOLE_MIN() ) ;io->print(" "); io->println(GET_RPOLE_MAX());
+  io->print("JAW: ");   io->println(GET_JAW_MIN()   ) ;io->print(" "); io->println(GET_JAW_MAX());
+  io->print("RPOLE: "); io->println(GET_RPOLE_MIN() ) ;io->print(" "); io->println(GET_RPOLE_MAX());
+  io->print("LEYE: ");  io->println(GET_LEYE_MIN()  ) ;io->print(" "); io->println(GET_LEYE_MAX());
+  io->print("REYE: ");  io->println(GET_REYE_MIN()  ) ;io->print(" "); io->println(GET_REYE_MAX());
+  io->print("ROTATE: ");io->println(GET_ROTATE_MIN()) ;io->print(" "); io->println(GET_ROTATE_MAX());
+  io->println(" ");
+  return;
+}  // end of cmd_prefs
 
 
 //- - - - - - - - -
@@ -145,9 +175,9 @@ short Prefs::GET_REYE_MIN()  { return(myPrefs->getShort(REYE_MIN_NAME)   );}
 short Prefs::GET_ROTATE_MIN(){ return(myPrefs->getShort(ROTATE_MIN_NAME) );}
 
 short Prefs::GET_LPOLE_MAX() { return(myPrefs->getShort(LPOLE_MAX_NAME)  );}
-short Prefs::GET_RPOEL_MAX() { return(myPrefs->getShort(RPOLE_MIN_NAME)  );}
+short Prefs::GET_RPOLE_MAX() { return(myPrefs->getShort(RPOLE_MIN_NAME)  );}
 short Prefs::GET_JAW_MAX()   { return(myPrefs->getShort(JAW_MAX_NAME)    );}
 short Prefs::GET_LEYE_MAX()  { return(myPrefs->getShort(LEYE_MAX_NAME)   );}
 short Prefs::GET_REYE_MAX()  { return(myPrefs->getShort(REYE_MAX_NAME)   );}
-short Prefs::GET_ROTATE_MAX(){ return(myPrefs->getShort(ROTATE_MAX_NAME) ); }
+short Prefs::GET_ROTATE_MAX(){ return(myPrefs->getShort(ROTATE_MAX_NAME) );}
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              

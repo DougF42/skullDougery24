@@ -13,7 +13,6 @@
 
 /**
  * @brief: helper function to convert a string to a 16-bit integer.
- *   (this function is static, available to command processors everywhere)
  *
  *   This converts a string to a signed integer.
  *
@@ -26,7 +25,7 @@
  * @return - the converted value. Also, errno is always set.
  *
  */
-int16_t Utilities::getInt(const char *target) {
+int16_t getInt(const char *target) {
 	errno = 0;
 	long l = strtol(target, nullptr, 10);
 

@@ -11,7 +11,9 @@
  */
 
 #include <string.h>
+#include <Stream.h>
 #include "CmdProcessor.h"
+#include "Prefs.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <limits.h>
@@ -28,15 +30,17 @@ typedef struct
     const char *name;  // Tha name of the actual command
     const char *descr; // This is the associated help
 
-    void (*command)(CmdProcessor *me, int argcnt, char **argList); // the command to invoke.
+    void (*command)(Stream *me, int argcnt, char **argList); // the command to invoke.
 } cmd_t;
 
 static cmd_t cmdlist[] ={
     {1, 1,   "help", "This help message", CmdProcessor::help },
     {1, 1,   "?   ",    "This help message", CmdProcessor::help },
-	{1, 1,   "limits", " Get the current servo and led limits", Servos::getLimitsCmd },
+	{1, 1,   "limits", " Get the current servo and led limits", Servos::getLimitsCmd }, // ALL limits
 	{4, 4,   "set" , " Set the servo limit (uSecs): limit [min|max] [left,right,rot,jaw, leye,reye,eyes]] <value>", Servos::setLimitsCmd },
-    {3, 3,   "move", " Move the head (perecent):  move [nod,tilt,rot,jaw, leye, reye, eyes", Servos::setServoCmd},
+    {3, 3,   "move", " Move the head (perecent):  move [nod,tilt,rot,jaw, leye, reye, eyes", Servos::setServoCmd},   
+    {2, 2,   "prefs", "<show> Report all prefrence settings, including wifi password", Prefs::cmd_prefs},
+    {1, 1,   "prefs", "report all prefrence settingds EXCEPT wifi password", Prefs::cmd_prefs},
     {-1, -1, "END", "Designates end of help message", nullptr}
 };
 
@@ -64,19 +68,18 @@ CmdProcessor::~CmdProcessor()
  * This works by walking the 'cmdlist' array.
  *
  */
-void CmdProcessor::help(CmdProcessor *me, int argcnt, char **argList)
+void CmdProcessor::help(Stream *me, int argcnt, char **argList)
 {
     cmd_t *thisCmd = nullptr;
 
     for (thisCmd = cmdlist; thisCmd->minTokenCount >= 0; thisCmd++)
     {
-        me->myIO->print("  ");
-        me->myIO->print(thisCmd->name);
-        me->myIO->print("  ");
-        me->myIO->println(thisCmd->descr);
+        me->print("  ");
+        me->print(thisCmd->name);
+        me->print("  ");
+        me->println(thisCmd->descr);
     }
 }
-
 
 
 /**
@@ -106,7 +109,7 @@ void CmdProcessor::loop()
         else if (ch == '?')
         { // Force help message
             myIO->println(" ");
-            help(this, 0, nullptr);            
+            help(myIO, 0, nullptr);            
         }
 
         else if (ch == '\n')
@@ -171,15 +174,13 @@ void CmdProcessor::processCommand() {
 			return; // empty list
 		}
 
-
-
 	// NOW find the function and execute it
 	for (cmd = cmdlist; cmd->minTokenCount >= 0; cmd++) {
 		if (0 == strcasecmp(cmd->name, dummyArgList[0])) {
 		// We see the command name - check argument count.
 			if ((nextArgNo >= cmd->minTokenCount) && (nextArgNo <= cmd->maxTokenCount)) {
 				// Run the command!
-				cmd->command( this, nextArgNo, dummyArgList);
+				cmd->command( this->myIO, nextArgNo, dummyArgList);
 				return;   // go no futher...
 			} else {
 				wrongNumberOfArgs=true;

@@ -77,10 +77,10 @@ public:
      * @param argcnt  - how many tokens in the command line (including the command name)
      * @param argList  - array of string pointers to each argument.
      */
-    static void getLimitsCmd    (CmdProcessor *me, int argcnt, char **argList);
-    static void getServoPcntCmd (CmdProcessor *me,int argcnt, char **argList);
-    static void setLimitsCmd    (CmdProcessor *me, int argcnt, char **argList);
-    static void setServoCmd     (CmdProcessor *me, int argcnt, char **argList);
+    static void getLimitsCmd    (Stream *me, int argcnt, char **argList);
+    static void getServoPcntCmd (Stream *me,int argcnt, char **argList);
+    static void setLimitsCmd    (Stream *me, int argcnt, char **argList);
+    static void setServoCmd     (Stream *me, int argcnt, char **argList);
 };
 
 #endif

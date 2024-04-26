@@ -22,3 +22,16 @@ Eyes (Left and Right) (possibly brightness follows voice?)
 
 NOD  (nod and tilt a combination of two servos) (random?)
 TILT (nod and tilt a combination of two servos) ( overall tempo or intensity?)
+ -- -  -
+ MP3 reader: from git@github.com:atomic14/esp32-play-mp3-demo.git
+   We only include a single 'include' file (minimp3.h) from the github
+    repository. This is all that's needed for reading... you guessed
+    it... *.mp3 files!
+    
+ FFT: there are a lot of them out there... I'm being lazy, using
+      the 'arduinoFFT' library. This is to try and determine a reasonable i
+      jaw position from the spectrum of the input.
+         Below 400 hz - ignore
+	 400-3500 hz - open based on magnitude. (normal sound)
+	 above 3500 hz - hssss sounds, close jaw more.
+	 

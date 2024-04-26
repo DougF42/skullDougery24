@@ -35,11 +35,10 @@ private:
     int nextArgNo;
 
 public:
-    CmdProcessor(Stream *_iostream); // initialize.
+    CmdProcessor(Stream *stream); // initialize.
     ~CmdProcessor();
     void loop(); // attempt to read - and process - the next command
-    static void help(CmdProcessor *me, int argcnt, char **argList);
-    static int getInt(const char *target);
+    static void help(Stream *me, int argcnt, char **argList);
     Stream *myIO; // Pointer to the stream that handles IO for this command processor. (Serial?)
 };
 

@@ -11,7 +11,7 @@
  *    driver.
  * Commands use an integer percent of full - level is at 50 (50 percent)
  */
-
+#include "Utilities.h"
 #include "Servos.h"
 
 // Perfect for servos - 50 hz
@@ -19,6 +19,7 @@
 
 // Adjust this to get a real 50 HZ pulse rate.
 #define OCILLATOR_ADJUST 27000000
+
 bool   Servos::alreadyInited = false;
 Adafruit_PWMServoDriver *Servos::pwm=nullptr;
 Servos::ServoList_t Servos::servoList[NUMBER_OF_SERVOS];
@@ -245,21 +246,21 @@ int Servos::getServoPcnt(ServoId_t id)
 
 
 
-void Servos::getLimitsCmd(CmdProcessor *me, int argcnt, char **argList)
+void Servos::getLimitsCmd(Stream *me, int argcnt, char **argList)
 {
     Servos::ServoId id = decodeId(argList[1]);
     if (id==S_NONE)
     {
         // TOOD: Report error
-        me->myIO->print("Unknown servo name '");
-        me->myIO->print(argList[1]);
-        me->myIO->println("' ");
+        me->print("Unknown servo name '");
+        me->print(argList[1]);
+        me->println("' ");
         return;
     }
-    me->myIO->print("MIN:  ");me->myIO->print(servoList[id].minLimit);
-    me->myIO->print("HOME: ");me->myIO->print(servoList[id].home);
-    me->myIO->print("MAX:  "); me->myIO->print(servoList[id].maxLimit);
-    me->myIO->println(" ");
+    me->print("MIN:  "); me->print(servoList[id].minLimit);
+    me->print("HOME: "); me->print(servoList[id].home);
+    me->print("MAX:  "); me->print(servoList[id].maxLimit);
+    me->println(" ");
     return;
 }
 
@@ -271,34 +272,34 @@ void Servos::getLimitsCmd(CmdProcessor *me, int argcnt, char **argList)
  * @param argList  <cmd> <servoName> <minuSecs> <maxuSecs> [<homeuSecs>]
  *     if home is ommitted, then home is 1/2 way between min and max
  */
-void Servos::setLimitsCmd(CmdProcessor *me, int argcnt, char **argList)
+void Servos::setLimitsCmd(Stream *me, int argcnt, char **argList)
 {
     Servos::ServoId id = decodeId(argList[1]);
     if (id==S_NONE)
     {
         // TOOD: Report error
-        me->myIO->print("Unknown servo name '");
-        me->myIO->print(argList[1]);
-        me->myIO->println("' ");
+        me->print("Unknown servo name '");
+        me->print(argList[1]);
+        me->println("' ");
         return;
     }
     // decode values
-    uint16_t minUsecs = me->getInt(argList[2]);
-    uint16_t maxUsecs = me->getInt(argList[3]);  
+    uint16_t minUsecs = getInt(argList[2]);
+    uint16_t maxUsecs = getInt(argList[3]);  
     if (minUsecs <= maxUsecs)
     {
         // TODO: ERROR
-        me->myIO->println("Error: min MUST be less than MAX limit!");
+        me->println("Error: min MUST be less than MAX limit!");
         return;
     }
 
 
     if (argcnt == 5)
     {
-        uint16_t homeUsecs = me->getInt(argList[4]);
+        uint16_t homeUsecs = getInt(argList[4]);
         if ( (homeUsecs > maxUsecs) || (homeUsecs < minUsecs) )
         {
-            me->myIO->println("Error: home MUST be between min and max limits");
+            me->println("Error: home MUST be between min and max limits");
             return;
         }
         setLimits(id, minUsecs, maxUsecs, homeUsecs );        
@@ -315,23 +316,23 @@ void Servos::setLimitsCmd(CmdProcessor *me, int argcnt, char **argList)
  * @param argcnt  must be 3
  * @param argList <cmd> <servoName> <percentage>
  */
-void Servos::setServoCmd(CmdProcessor *me, int argcnt, char **argList)
+void Servos::setServoCmd(Stream *me, int argcnt, char **argList)
 {
     Servos::ServoId id=decodeId( argList[1]);
     if (id==S_NONE)
     {
         // TOOD: Report error
-        me->myIO->print("Unknown servo name '");
-        me->myIO->print(argList[1]);
-        me->myIO->println("' ");
+        me->print("Unknown servo name '");
+        me->print(argList[1]);
+        me->println("' ");
         return;
     }
 
     // TODO: Get value int pcnt = decodeValue(argList[2])
-    int target = me->getInt(argList[2]);
+    int target = getInt(argList[2]);
     if ( (target <0) || (target>100) )
     {
-        me->myIO->println("position value out of range (0-100)!");
+        me->println("position value out of range (0-100)!");
         return;
     }
     setServo(id, target);
@@ -346,17 +347,17 @@ void Servos::setServoCmd(CmdProcessor *me, int argcnt, char **argList)
  * @param id    - the ID of the Servo
  * @return int  - the percentage (0...100)
  */
-void Servos::getServoPcntCmd (CmdProcessor *me,int argcnt, char **argList)
+void Servos::getServoPcntCmd (Stream *me,int argcnt, char **argList)
     {
         Servos::ServoId id = decodeId(argList[1]);
         if (id == S_NONE)
         {
             // TOOD: Report error
-            me->myIO->print("Unknown servo name '");
-            me->myIO->print(argList[1]);
-            me->myIO->println("' ");
+            me->print("Unknown servo name '");
+            me->print(argList[1]);
+            me->println("' ");
             return;
         }
 
-        me->myIO->println(getServoPcnt(id));
+        me->println(getServoPcnt(id));
     }

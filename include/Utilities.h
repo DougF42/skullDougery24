@@ -16,8 +16,7 @@
 #define U_T_I_L_I_T_E_S__H
 #include <stdint.h>
 #include <errno.h>
-class Utilities
-{
-    static int16_t getInt(const char *target);
-};
+
+extern int16_t getInt(const char *target);
+
 #endif

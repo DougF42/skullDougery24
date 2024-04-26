@@ -27,6 +27,7 @@ class Prefs {
         ~Prefs();
         static void begin();          // This initializes the prefrences system.
         static void resetToDefaults();
+        static void cmd_prefs(Stream *io, int argc, char **argv ); // report current prefrences
 
         // Get and Set...
         static String wifiSSID();
@@ -55,7 +56,7 @@ class Prefs {
          static short GET_REYE_MIN();
          static short GET_ROTATE_MIN();
          static short GET_LPOLE_MAX();
-         static short GET_RPOEL_MAX();
+         static short GET_RPOLE_MAX();
          static short GET_JAW_MAX();
          static short GET_LEYE_MAX();
          static short GET_REYE_MAX();
