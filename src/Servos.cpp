@@ -81,42 +81,9 @@ int Servos::decodeId(const char *str)
 }
 
 
-/**
- * @brief Set the allowed PWM on-time (in uSecs) for a given servo
- *
- * @param id  - identifies the servo(s) to set (from *_SERVO from Config.h)
- * @param min - the minimum angle in degrees
- * @param max - the max angle in degrees
- * @return true  - normal return
- * @return false - error return
- */
-bool Servos::setMinMaxTimes(int id, SERVO_SETING_t min_, SERVO_SETING_t max_)
-{
-    if (min_ >= max_)
-        return (false);
-
-    if (max_ <= 0)
-        return (false);
-
-    switch (id)
-    {
-    case (JAW_SERVO): // Single Servos
-    case (ROT_SERVO):
-    case (LEFT_SERVO):
-    case (RIGHT_SERVO):
-    case (LEYE_SERVO):
-    case (REYE_SERVO):
-        Prefs::setServoAngles(id, min_, max_);
-        break;
-
-    case (-1): // 
-        return (false);
-    }
-    return(true);
-}
 
 /**
- * @brief Get the min/max pwm on time (uSecs) for a given servo
+ * @brief Get the min/max angles (in degrees)) for a given servo
  * 
  * @param id 
  * @param min 
@@ -124,7 +91,7 @@ bool Servos::setMinMaxTimes(int id, SERVO_SETING_t min_, SERVO_SETING_t max_)
  * @return true 
  * @return false 
  */
-bool Servos::getMinMax(int id, SERVO_SETING_t *min, SERVO_SETING_t *max)
+bool Servos::getMinMaxAngles(int id, SERVO_SETING_t *minAngle, SERVO_SETING_t *maxAngle)
 {
     switch (id)
     {
@@ -134,7 +101,7 @@ bool Servos::getMinMax(int id, SERVO_SETING_t *min, SERVO_SETING_t *max)
     case (RIGHT_SERVO):
     case (LEYE_SERVO):
     case (REYE_SERVO):
-        Prefs::getServo(id, &min, &max);
+        Prefs::getServoAngles(id, minAngle, maxAngle);
         break;
 
     case (-1):
@@ -142,6 +109,7 @@ bool Servos::getMinMax(int id, SERVO_SETING_t *min, SERVO_SETING_t *max)
     }
     return (true);
 }
+
 
 /**
  * @brief Set the indicated servo to a position (angle +/- 90)
@@ -153,6 +121,10 @@ bool Servos::getMinMax(int id, SERVO_SETING_t *min, SERVO_SETING_t *max)
  */
 bool Servos::setServoAngle(int id, SERVO_SETING_t pos)
 {
+    int minAngle,maxAngle;
+    SERVO_PWN_t minPwm,maxPwm=0;
+    SERVO_SETING_t pwmVal;
+
     switch (id)
     {
     case (JAW_SERVO):
@@ -162,14 +134,16 @@ bool Servos::setServoAngle(int id, SERVO_SETING_t pos)
     case (LEYE_SERVO):
     case (REYE_SERVO):
         // TOOD: MAP degrees to microseconds
-        hw716.writeMicroseconds(id, pos);
-         servoList[id].lastPos=pos;
-        break;
+        Prefs::getServoTimes(id, &minPwm, &maxPwm);
+        Prefs::getServoAngles(id, &minAngle, &maxAngle);
+        pwmVal=map(pos, minAngle,maxAngle, minPwm, maxPwm);
+        hw716.writeMicroseconds(id, pwmVal);
+        servoList[id].lastPos=pos;
+        return (true);
 
-    case (-1):
-        return (false);
+    default:
+        return(false);
     }
-    return (true);
 }
 
 
@@ -179,7 +153,7 @@ bool Servos::setServoAngle(int id, SERVO_SETING_t pos)
  * @param id - the ID of the servo. ONLY SINGLE SERVOS ARE ACCEPTED!
  * @return int The current angle (in degrees 0 +/- 90). 
  */
-SERVO_SETING_t Servos::getServoPos(int id)
+SERVO_SETING_t Servos::getServoAngle(int id)
 {
     switch (id)
     {
@@ -196,38 +170,66 @@ SERVO_SETING_t Servos::getServoPos(int id)
 
 
 /**
- * @brief Get (or set) the servo's limits
+ * @brief set the servo's limits
  *      Note: Argcnt must be 2 or 3
- *   Format 1:  setlimits servoId min max
- *   Format 2:  getlimits servoId
+ *   Format 1:  setlimits servoId minPwm maxPwm
  * @param outStream - where to send the response
  * @param tokCnt    - how many tokens?
  * @param argList   - list of pointers to tokens
  */
-void Servos::ServolimitsCmd(Stream *outStream, int tokCnt, char **tokens)
+void Servos::ServoSetPwmlimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
 {
-    int id=0; // Decode the ID
-    id = decodeId(tokens[1]); 
-    if (id<0)
+    int id = 0; // Decode the ID
+    id = decodeId(tokens[1]);
+    if (id < 0)
     {
         outStream->println("Invalid servo id");
         return;
     }
 
-    if (tokCnt==2)
-    { // get
-        outStream->print("MIN is "); outStream->println(servoList[id].smin);
-        outStream->print("MAX is "); outStream->println(servoList[id].smax);
-    } else 
-    { // put
-        SERVO_SETING_t smin ;
-        Commands::decodeLongIntToken(outStream, "setlimit", "min", 0LL, UINT32_MAX, &smin);
-        SERVO_SETING_t smax;
-        outStream->print("MIN is "); outStream->println(servoList[id].smin);
-        outStream->print("MAX is "); outStream->println(servoList[id].smax);
-    }
+    // put
+    SERVO_PWN_t smin;
+    Commands::decodeLongToken(outStream, "setlimit",  tokens[2], INT32_MIN,UINT32_MAX, &smin);
+    SERVO_PWN_t smax;
+    Commands::decodeLongToken(outStream, "setlimit", tokens[3],  INT32_MIN, UINT32_MAX, &smax);
+    Prefs::setServoTimes(id, smin, smax);
+    outStream->print("MIN is ");   outStream->print(smin); 
+    outStream->print("MAX is ");   outStream->println(smax);
+
     return;
 }
+
+
+/**
+ * @brief set the servo's Anglularlimits
+ *      Note: Argcnt must be 2 or 3
+ *   Format 1:  setlimits servoId minPwm maxPwm
+ * @param outStream - where to send the response
+ * @param tokCnt    - how many tokens?
+ * @param argList   - list of pointers to tokens
+ */
+void Servos::ServoAnglelimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
+{
+    int id = 0; // Decode the ID
+    id = decodeId(tokens[1]);
+    if (id < 0)
+    {
+        outStream->println("Invalid servo id");
+        return;
+    }
+
+    // put
+    SERVO_SETING_t smin;
+    Commands::decodeIntToken(outStream, "setlimit",  tokens[2], INT32_MIN,UINT32_MAX, &smin);
+    SERVO_SETING_t smax;
+    Commands::decodeIntToken(outStream, "setlimit", tokens[3],  INT32_MIN, UINT32_MAX, &smax);
+    Prefs::setServoTimes(id, smin, smax);
+    outStream->print("MIN angle is ");   outStream->print(smin); 
+    outStream->print("   MAX angle is ");   outStream->println(smax);
+
+    return;
+}
+
 
 /**
  * @brief Set the position of a secific servo
@@ -237,7 +239,22 @@ void Servos::ServolimitsCmd(Stream *outStream, int tokCnt, char **tokens)
  * @param tokCnt    - how many tokens?
  * @param argList   - list of pointers to tokens
  */
-void Servos::ServoPosCmd(Stream *outStream, int argcnt, char **argList)
+void Servos::ServoPosCmd(Stream *outStream, int tokcnt, char **tokens)
 {
-    // TODO:
+    int id = 0; // Decode the ID
+    id = decodeId(tokens[1]);
+    if (id < 0)
+    {
+        outStream->println("Invalid servo id");
+        return;
+    }
+
+    SERVO_SETING_t minAngle, maxAngle, newPos, reqPos;
+    SERVO_PWN_t   minPwm, maxPwm;
+    Commands::decodeIntToken( outStream, "new position", tokens[2], INT32_MIN, INT32_MAX, &reqPos);
+    Prefs::getServoAngles(id, &minAngle, &maxAngle);
+    Prefs::getServoTimes(id, &minPwm, &maxPwm);
+    newPos = map(newPos, minAngle,maxAngle, minPwm,maxPwm );  // map the angle to a pwm setting
+
+    hw716.setPWM(id, 0, newPos);  // This setting starts at time=0, continues until time=newPos
 }

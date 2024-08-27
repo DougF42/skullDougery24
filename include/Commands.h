@@ -86,7 +86,7 @@ public:
    */
   int findArgName(int argcnt, char **argv, const char *name);
   static bool decodeIntToken(Stream *outstream, const char *label, const char *target, int minVal, int maxVal, int *val);
-  static bool decodeLongIntToken(Stream *outstream, const char *label, const char *target, long long minVal, long long maxVAl, long long *val);
+  static bool decodeLongToken(Stream *outstream, const char *label, const char *target, long minVal, long maxVAl, long *val);
 
   // Some special built-in commands
   static void helpCmd(Stream *outstream, int tokCnt, char **tokens);

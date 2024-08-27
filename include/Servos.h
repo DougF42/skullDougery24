@@ -27,7 +27,6 @@
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
 
-typedef long SERVO_SETING_t;
 
 class Servos
 {
@@ -48,12 +47,12 @@ public:
     ~Servos();
     static void begin();
     static int decodeId(const char *str);
-    static bool getMinMaxTimes(int id, SERVO_SETING_t *min, SERVO_SETING_t *max);
-    static bool setMinMax(int id, SERVO_SETING_t min_, SERVO_SETING_t max_);
+    static bool getMinMaxAngles(int id, SERVO_SETING_t *min, SERVO_SETING_t *max);
     static bool setServoAngle(int id, SERVO_SETING_t pos);
-    static SERVO_SETING_t getServoPos(int id);
+    static SERVO_SETING_t getServoAngle(int id);
 
-    static void ServolimitsCmd(Stream *outStream, int argcnt, char **argList);
+    static void ServoSetPwmlimitsCmd(Stream *outStream, int argcnt, char **argList);
+    static void ServoAnglelimitsCmd(Stream *outStream, int argcnt, char **argList);
     static void ServoPosCmd(Stream *outStream, int argcnt,  char **argList);
 };
 

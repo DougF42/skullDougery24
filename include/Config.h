@@ -4,6 +4,10 @@
 #ifndef C_O_N_F_I_G__H
 #define  C_O_N_F_I_G__H
 
+// This needs to be global...
+typedef int SERVO_SETING_t;
+typedef long SERVO_PWN_t;
+
 
 // Settable PREFRENCES
 #define FIRMWARE_VERSION "0.0.1"

@@ -256,7 +256,7 @@ void Commands::dispatch(int tokCnt, char **tokens)
    * @return false    - Target does not contain a valid unsigned long  integer.
    */
   
-  bool Commands::decodeLongIntToken(Stream *outstream, const char *label, const char *target, long long minVal, long long maxVal, long long *val)
+  bool Commands::decodeLongToken(Stream *outstream, const char *label, const char *target, long minVal, long maxVal, long *val)
   {
     char *endPtr;
     errno = 0;

@@ -54,9 +54,7 @@ static cmdList_t cmdList[]=
 
   {COMMENT,   " - - - SERVO LIMIT SETTINGS - - - -", 1, 1,          nullptr},
   {COMMENT,   " Valid <servo> names:  rot, jaw, leye, reye, tiltnod1, tiltnod2"},
-  {"setLimit", "setlimit <servo> <min> <max>  set the limits for a servo" , 4,4, Servos::ServolimitsCmd},
-  {"getLimit", "getLimit <servo>   get the min/max limits for a servo",     2,2, Servos::ServolimitsCmd},                                                              
-  {"move",  "move <servo> <pos>  move a servo to the indicated position",   3,3, Commands::notImplCmd},
+  {"pwm ",    "pwm <servo> <minAngle> <maxAngle> ", 3,3,Servos::ServoSetPwmlimitsCmd},
 
   {"END",     "END",            0,0,                           Commands::notImplCmd},  // The 0 minTokCount indicates end-of-list
 };

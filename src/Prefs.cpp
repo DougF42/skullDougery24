@@ -74,7 +74,7 @@ void Prefs::dump_cmd(Stream *outstream, int tokCnt, char **tokens)
     outstream->println(" (micrseconds)");
 
     outstream->print("        Angle limts from "); outstream->print(servoLimits[id].minAngle) ;
-    outstream->print(" To  ");outstream->print(servoLimits[id].maxAngle); outstream->println("Degrees);")
+    outstream->print(" To  ");outstream->print(servoLimits[id].maxAngle); outstream->println("Degrees);");
   }
   return;
 }
@@ -472,15 +472,22 @@ long Prefs::udpPort() {
  * @param min  - min limit to set
  * @param max  - max limit to set
  */
-void  Prefs::setServoTimes(int id, long min, long max)
+bool  Prefs::setServoTimes(int id, SERVO_PWN_t min, SERVO_PWN_t max)
 {
-  if ( (id<0) || (id > NO_OF_SERVOS) ) return; //out of range.
+  if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
   servoLimits[id].minimum = min;
   servoLimits[id].maximum = max;
   servoLimits[id].limits_changed=true;
+  return(true);
 }
 
-
+bool Prefs::getServoTimes(int id, SERVO_PWN_t *minVal, SERVO_PWN_t *maxVal)
+{
+  if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
+  *minVal=servoLimits[id].minimum;
+  *maxVal=servoLimits[id].maximum;
+  return(true);
+}
 
 /**
  * @brief Set a servo's min/max PWM on times
@@ -489,39 +496,20 @@ void  Prefs::setServoTimes(int id, long min, long max)
  * @param min  - min limit to set
  * @param max  - max limit to set
  */
-void  Prefs::setServoAngles(int id, int min, int max)
+bool  Prefs::setServoAngles(SERVO_SETING_t id, SERVO_SETING_t min, SERVO_SETING_t max)
 {
-  if ( (id<0) || (id > NO_OF_SERVOS) ) return; //out of range.
+  if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
   servoLimits[id].minAngle = min;
   servoLimits[id].maxAngle = max;
   servoLimits[id].limits_changed=true;
+  return(true);
 }
 
 
-
-/**
- * @brief Get the min PWM on time (in uSecs)for a servo
- *
- * @param id   - index of the servo.
- * @return long  - returns the minimum limit for this servo,
- *                      or -1 if any error.
- */
-long Prefs::getServoMinAngle(int id)
-{
-  if ((id < 0) || (id > NO_OF_SERVOS))
-    return (-1); // out of range.
-  return (servoLimits[id].minAngle);
-}
-
-/**
- * @brief Get the maximum on time (in uSecs) for a servo
- *
- * @param id   - index of the servo.
- * @return long long  - returns the maximum limit for this servo
- */
-long Prefs::getServoMaxAngle(int id)
-{
-  if ((id < 0) || (id > NO_OF_SERVOS))
-    return (-1); // out of range.
-  return (servoLimits[id].maxAngle);
-}
+  bool Prefs::getServoAngles(int id,  SERVO_SETING_t *minAngle, SERVO_SETING_t *maxAngle)
+  {
+    if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
+    *minAngle = servoLimits[id].minAngle;
+    *maxAngle = servoLimits[id].maxAngle;
+    return(true);
+  }

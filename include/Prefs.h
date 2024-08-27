@@ -30,10 +30,10 @@ class Prefs
   public:
     typedef struct
     {
-      long minimum;   // shortest allowed pwm on time (uSecs)
-      int minAngle;  // angle corresponding to minimum
-      long maximum;   // longest allowed pwm on time (uSecs)
-      int maxAngle;  // angle corresponding to max
+      SERVO_PWN_t minimum;   // shortest allowed pwm on time (uSecs)
+      SERVO_SETING_t minAngle;  // angle corresponding to minimum
+      SERVO_PWN_t maximum;   // longest allowed pwm on time (uSecs)
+      SERVO_SETING_t maxAngle;  // angle corresponding to max
       bool limits_changed; // flag -true if any limit or angle changed
     } ServoLimits_t;
 
@@ -57,9 +57,9 @@ class Prefs
     static void reset_flash_cmd(Stream *outstream, int tokCnt, char **tokens);
     static void commit_cmd(Stream *outstream, int tokCnt, char **tokens);
 
-    static void pref_ssid_cmd(Stream *outstream, int tokCnt, char **tokens);
-    static void pref_pass_cmd(Stream *outstream, int tokCnt, char **tokens);
-    static void pref_alexa_cmd(Stream *outstream, int tokCnt, char **tokens);
+    static void pref_ssid_cmd  (Stream *outstream, int tokCnt, char **tokens);
+    static void pref_pass_cmd  (Stream *outstream, int tokCnt, char **tokens);
+    static void pref_alexa_cmd (Stream *outstream, int tokCnt, char **tokens);
     static void prefUdpPort_cmd(Stream *outstream, int tokCnt, char **tokens);
     
 
@@ -75,10 +75,12 @@ class Prefs
     static void udpPort(long portno);
     static long  udpPort();
 
-    static void setServoTimes(int id, long min, long max);
-    static void setServoAngles(int id, int minAngle, int maxAngle);
-    static long getServoMinAngle(int id);
-    static long getServoMaxAngle(int id);
+    static bool setServoTimes(int id, SERVO_PWN_t min, SERVO_PWN_t max);
+    static bool getServoTimes(int id, SERVO_PWN_t *min, SERVO_PWN_t *max);
+    
+    static bool setServoAngles(int id, SERVO_SETING_t minAngle, SERVO_SETING_t maxAngle);
+    static bool getServoAngles(int id,  SERVO_SETING_t *minAngle, SERVO_SETING_t *maxAngle);
+
 
 };
 

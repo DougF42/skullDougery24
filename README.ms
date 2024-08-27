@@ -2,6 +2,6 @@
 * Buld with platformio.
 * * Build using Arduino environment. esp32doit platform.
 * Libraries added:
-    ESP32Servo  (appears in platformio as  madhephaestus/ESP32Servo@^1.1.2)
+    adafruit/Adafruit PWM Servo Driver Library for (HW-716 16-channel servo board)
 
 MORE TO COME!
