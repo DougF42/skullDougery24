@@ -1,62 +1,60 @@
 /**
- * @file Kinematics.h
+ * @file Servos.h
  * @author Doug Fajardo (doug.fajardo@gmail.com)
- * @brief
- * @version 0.1
+ * @brief This provides an interface to the servos (direct), and enforces limits
+ *   (Note: It does NOT do kinemetics - the's elsewhere)
+ * @version 0.2
  * @date 2024-02-27
  *
  * @copyright Copyright (c) 2024
  *
+ * LOGIC:
+ *   The servo has an operating range (MIN/MAX) in microseconds. 
+ * In addition, we record the angle at these limits.
+ *   These numbers are stored in FLASH, and can only be set/read
+ * by command (internal routines do not need to set these).
+ * 
+ * The result is that position inputs are in degrees, and this 
+ * class converts the angle into the appropraite PWM on-time
+ * internally (Thank you Bill!).
+ *        
  */
 
 #ifndef S_E_R_V_O_S__H
 #define S_E_R_V_O_S__H
-#include <ESP32Servo.h>
+#include <Arduino.h>
+#include "Config.h"
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 
-/**
- * @brief The number of 'real' servos
- * this excludes the EYES and NOD types, which
- *    are combinations of the other servos.
- * 
- */
-#define NUMBER_OF_SERVOS 5
-
+typedef long SERVO_SETING_t;
 
 class Servos
 {
 private:
-    struct 
+    static Adafruit_PWMServoDriver hw716;
+    // Note: The index of the servoList is configured 
+    typedef struct 
     {
-        Servo servo; // the servo being refrenced.
-        int min;  // phys minimum limit in microseconds (coresponds to 0 degrees)
-        int max;  // phys maximum limit in microseconds (corresponds to 180 degrees)        
-    } servoList[NUMBER_OF_SERVOS];
+        bool ServoIsDefined;
+        SERVO_SETING_t lastPos;     
+    } servoList_t;
+    
+     static servoList_t servoList[NO_OF_SERVOS];
 
 public:
-    typedef enum ServoId
-    {
-        S_LEFT=0,  // Left Platform lift
-        S_RIGHT=1, // Right Platform lift
-        S_LEYE=2,  // left eye
-        S_REYE=3,  // rigft eye
-        S_ROTATE=4, // rotate platform
-        // Combinations:
-        S_EYES=5,  // both eyes together
-        S_NOD=6,   // Both left AND right motion (NOD)
-        S_NONE=7,  // No servo (or error decoding the servo name)
-    } ServoId_t;
 
-    Servos(int left, int right, int leye, int reye, int rot);
+    Servos();
     ~Servos();
-    bool setMinMax(ServoId_t id, int min, int max);
-    ServoId_t decodeId(const char *str);
+    static void begin();
+    static int decodeId(const char *str);
+    static bool getMinMaxTimes(int id, SERVO_SETING_t *min, SERVO_SETING_t *max);
+    static bool setMinMax(int id, SERVO_SETING_t min_, SERVO_SETING_t max_);
+    static bool setServoAngle(int id, SERVO_SETING_t pos);
+    static SERVO_SETING_t getServoPos(int id);
 
-    bool setServo(ServoId_t id, int pos);
-    int readServo(ServoId_t id);
-
-    static void getLimitsCmd(int argcnt, char **argList);
-    static void setLimitsCmd(int argcnt, char **argList);
-    static void setServoCmd(int argcnt,  char **argList);
+    static void ServolimitsCmd(Stream *outStream, int argcnt, char **argList);
+    static void ServoPosCmd(Stream *outStream, int argcnt,  char **argList);
 };
 
 #endif

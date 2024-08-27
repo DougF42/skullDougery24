@@ -7,9 +7,15 @@
  *
  * @copyright Copyright (c) 2024
  *
+ * Reminder: all servo settings are in uSeconds
  */
 
 #include "Servos.h"
+#include "Prefs.h"
+#include "Commands.h"
+/* STATIC DECLARATIONS */
+Adafruit_PWMServoDriver Servos::hw716;
+Servos::servoList_t Servos::servoList[NO_OF_SERVOS];
 
 /**
  * @brief Construct a new Kinemetics object
@@ -20,28 +26,24 @@
  * @param reye  - pin number for right eye
  * @param rot   - pin number for rotate.
  */
-Servos::Servos(int leftPin, int rightPin, int leyePin, int reyePin, int rotPin)
+Servos::Servos()
 {
-    int minUs = 500; // default time limits
-    int maxUs = 2600;
-    for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
+    hw716 = Adafruit_PWMServoDriver(); // init with I2c address 0x40
+    for (int id=0; id<NO_OF_SERVOS; id++)
     {
-        ESP32PWM::allocateTimer(idx);
+        servoList[id].lastPos=0;
+        servoList[id].ServoIsDefined=false;
     }
-
-    for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
-    {
-        servoList[idx].servo.setPeriodHertz(5);
-        servoList[idx].min = 0;
-        servoList[idx].max = 180;
-    }
-
-    servoList[S_LEFT].servo.attach(leftPin, minUs, maxUs);
-    servoList[S_RIGHT].servo.attach(rightPin, minUs, maxUs);
-    servoList[S_REYE].servo.attach(leyePin, minUs, maxUs);
-    servoList[S_LEYE].servo.attach(reyePin, minUs, maxUs);
-    servoList[S_REYE].servo.attach(rotPin, minUs, maxUs);
 }
+
+
+void Servos::begin()
+{
+    hw716.begin(); // start the servo driver
+    // hw715.setOscillatorFrequency(27000000); IF we need to trim HW716 osc freq
+    hw716.setPWMFreq(SERVO_PWM_FREQ);
+}
+
 
 /**
  * @brief Destroy the Kinematics object
@@ -49,49 +51,46 @@ Servos::Servos(int leftPin, int rightPin, int leyePin, int reyePin, int rotPin)
  */
 Servos::~Servos()
 {
-    for (int idx = 0; idx < NUMBER_OF_SERVOS; idx++)
-    {
-        servoList[idx].servo.detach();
-    }
+
 }
+
 
 /**
  * @brief [INTERNAL] Decode the string to determine what servo is named
- *
+ * 
  * @param str - the string to decode
- * @return Kinematics::ServoId - the servo named in str. S_NONE if not determined.
+ * @return The ID of the named servo. -1 if not found
  *
  */
-Servos::ServoId_t Servos::decodeId(const char *str)
+int Servos::decodeId(const char *str)
 {
-    ServoId_t res = S_NONE;
-    if (0 == strcasecmp(str, "LEFT"))
-        res = S_LEFT;
-    else if (0 == strcasecmp(str, "RIGHT"))
-        res = S_RIGHT;
-    else if (0 == strcasecmp(str, "NOD"))
-        res = S_NOD;
-    else if (0 == strcasecmp(str, "LEYE"))
-        res = S_LEYE;
-    else if (0 == strcasecmp(str, "REYE"))
-        res = S_REYE;
-    else if (0 == strcasecmp(str, "EYES"))
-        res = S_EYES;
+    int res = -1; 
+    if (0 == strcasecmp(str,"JAW"))
+        res= JAW_SERVO;
     else if (0 == strcasecmp(str, "ROT"))
-        res = S_ROTATE;
+        res = ROT_SERVO;
+    else if (0 == strcasecmp(str, "LEFT"))
+        res = LEFT_SERVO;
+    else if (0 == strcasecmp(str, "RIGHT"))
+        res = RIGHT_SERVO;
+    else if (0 == strcasecmp(str, "LEYE"))
+        res = LEYE_SERVO;
+    else if (0 == strcasecmp(str, "REYE"))
+        res = REYE_SERVO;
     return (res);
 }
 
+
 /**
- * @brief Define the range of allowed physical motion (in degrees)
+ * @brief Set the allowed PWM on-time (in uSecs) for a given servo
  *
- * @param id  - identifies the servo(s) to set
+ * @param id  - identifies the servo(s) to set (from *_SERVO from Config.h)
  * @param min - the minimum angle in degrees
  * @param max - the max angle in degrees
  * @return true  - normal return
  * @return false - error return
  */
-bool Servos::setMinMax(ServoId_t id, int min_, int max_)
+bool Servos::setMinMaxTimes(int id, SERVO_SETING_t min_, SERVO_SETING_t max_)
 {
     if (min_ >= max_)
         return (false);
@@ -101,75 +100,73 @@ bool Servos::setMinMax(ServoId_t id, int min_, int max_)
 
     switch (id)
     {
-    case (S_LEFT): // Single Servos
-    case (S_RIGHT):
-    case (S_LEYE):
-    case (S_REYE):
-    case (S_ROTATE):
-        servoList[id].min = min_;
-        servoList[id].max = max_;
+    case (JAW_SERVO): // Single Servos
+    case (ROT_SERVO):
+    case (LEFT_SERVO):
+    case (RIGHT_SERVO):
+    case (LEYE_SERVO):
+    case (REYE_SERVO):
+        Prefs::setServoAngles(id, min_, max_);
         break;
 
-    case (S_NOD): // Combined RIGHT and LEFT tilt
-        servoList[S_RIGHT].min = min_;
-        servoList[S_RIGHT].max = max_;
-        servoList[S_RIGHT].min = min_;
-        servoList[S_LEFT].max = max_;
-        servoList[S_LEFT].min = min_;
-        break;
-
-    case (S_EYES): // Combined Eyes
-        servoList[S_REYE].min = min_;
-        servoList[S_REYE].max = max_;
-        servoList[S_LEYE].min = min_;
-        servoList[S_LEYE].max = max_;
-
-    case (S_NONE):
+    case (-1): // 
         return (false);
     }
     return(true);
 }
 
 /**
- * @brief Set the indicated servo to a position
+ * @brief Get the min/max pwm on time (uSecs) for a given servo
+ * 
+ * @param id 
+ * @param min 
+ * @param max 
+ * @return true 
+ * @return false 
+ */
+bool Servos::getMinMax(int id, SERVO_SETING_t *min, SERVO_SETING_t *max)
+{
+    switch (id)
+    {
+    case (JAW_SERVO): // Single Servos
+    case (ROT_SERVO):
+    case (LEFT_SERVO):
+    case (RIGHT_SERVO):
+    case (LEYE_SERVO):
+    case (REYE_SERVO):
+        Prefs::getServo(id, &min, &max);
+        break;
+
+    case (-1):
+        return (false);
+    }
+    return (true);
+}
+
+/**
+ * @brief Set the indicated servo to a position (angle +/- 90)
  *
  * @param id <ServoId_t>- name of servo to set
- * @param pos desired position (in degrees... 0 >= pos >= 180). 90 is middle of range
+ * @param pos desired position (in degrees... 0 +/- 90)
  * @return true - normal.
  * @return false - error in input
  */
-bool Servos::setServo(ServoId_t id, int pos)
+bool Servos::setServoAngle(int id, SERVO_SETING_t pos)
 {
-    // translate the requested position into the real position, based
-    // on the per-servo limits.
-    int res;
-
     switch (id)
     {
-    case (S_LEFT): // Single servos
-    case (S_RIGHT):
-    case (S_LEYE):
-    case (S_REYE):
-    case (S_ROTATE):
-        res = map(pos, 0, 180, servoList[id].min, servoList[id].max);
-        servoList[id].servo.write(res);
+    case (JAW_SERVO):
+    case (ROT_SERVO):
+    case (LEFT_SERVO):
+    case (RIGHT_SERVO):
+    case (LEYE_SERVO):
+    case (REYE_SERVO):
+        // TOOD: MAP degrees to microseconds
+        hw716.writeMicroseconds(id, pos);
+         servoList[id].lastPos=pos;
         break;
 
-    case (S_NOD): // combine left and right servos
-        res = map(pos, 0, 180, servoList[S_LEFT].min, servoList[id].max);
-        servoList[S_LEFT].servo.write(res);
-        res = map(pos, 0, 180, servoList[S_RIGHT].min, servoList[id].max);
-        servoList[S_RIGHT].servo.write(res);
-        break;
-
-    case (S_EYES): // combine left and right eyes
-        res = map(pos, 0, 180, servoList[S_LEYE].min, servoList[id].max);
-        servoList[S_LEYE].servo.write(res);
-        res = map(pos, 0, 180, servoList[S_REYE].min, servoList[id].max);
-        servoList[S_REYE].servo.write(res);
-        break;
-
-    case (S_NONE):
+    case (-1):
         return (false);
     }
     return (true);
@@ -177,31 +174,70 @@ bool Servos::setServo(ServoId_t id, int pos)
 
 
 /**
- * @brief Return the current setting of the microcontroller
- * 
+ * @brief Return the current position of the microcontroller
+ *
  * @param id - the ID of the servo. ONLY SINGLE SERVOS ARE ACCEPTED!
- * @return int The current angle (in degrees). This is based
- *       on the min..max range. -1 if id is a combination servo.
+ * @return int The current angle (in degrees 0 +/- 90). 
  */
-int Servos::readServo(ServoId_t id)
+SERVO_SETING_t Servos::getServoPos(int id)
 {
-    if (id > 4) return(-1);
-    int res = servoList[id].servo.read();
-    return( map( res, 0, 180, servoList[id].min, servoList[id].max) );    
+    switch (id)
+    {
+    case (JAW_SERVO):
+    case (ROT_SERVO):
+    case (LEFT_SERVO):
+    case (RIGHT_SERVO):
+    case (LEYE_SERVO):
+    case (REYE_SERVO):        
+        return(servoList[id].lastPos);
+    }
+    return (-1);
 }
 
 
-    void Servos::getLimitsCmd(int argcnt, char **argList)
+/**
+ * @brief Get (or set) the servo's limits
+ *      Note: Argcnt must be 2 or 3
+ *   Format 1:  setlimits servoId min max
+ *   Format 2:  getlimits servoId
+ * @param outStream - where to send the response
+ * @param tokCnt    - how many tokens?
+ * @param argList   - list of pointers to tokens
+ */
+void Servos::ServolimitsCmd(Stream *outStream, int tokCnt, char **tokens)
+{
+    int id=0; // Decode the ID
+    id = decodeId(tokens[1]); 
+    if (id<0)
     {
-        // TODO:
+        outStream->println("Invalid servo id");
+        return;
     }
 
-    void Servos::setLimitsCmd(int argcnt, char **argList)
-    {
-        // TODO:
+    if (tokCnt==2)
+    { // get
+        outStream->print("MIN is "); outStream->println(servoList[id].smin);
+        outStream->print("MAX is "); outStream->println(servoList[id].smax);
+    } else 
+    { // put
+        SERVO_SETING_t smin ;
+        Commands::decodeLongIntToken(outStream, "setlimit", "min", 0LL, UINT32_MAX, &smin);
+        SERVO_SETING_t smax;
+        outStream->print("MIN is "); outStream->println(servoList[id].smin);
+        outStream->print("MAX is "); outStream->println(servoList[id].smax);
     }
+    return;
+}
 
-    void Servos::setServoCmd(int argcnt,  char **argList)
-    {
-        // TODO:
-    }
+/**
+ * @brief Set the position of a secific servo
+ *  
+ * 
+ * @param outStream - where to send the response
+ * @param tokCnt    - how many tokens?
+ * @param argList   - list of pointers to tokens
+ */
+void Servos::ServoPosCmd(Stream *outStream, int argcnt, char **argList)
+{
+    // TODO:
+}

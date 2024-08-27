@@ -1,0 +1,46 @@
+/**
+ * Implement Command processor on the Serial port
+ *
+ * This ALSO implements the touch switch that
+ * opens/closes the curtains.
+ */
+#include <Arduino.h>
+#include "Config.h"
+#include "SerialCmd.h"
+#include "Commands.h"
+
+SerialCmd::SerialCmd()
+{
+
+}
+
+SerialCmd::~SerialCmd()
+{
+}
+
+/**
+ * @brief initialize the serial port
+ * 
+ */
+void SerialCmd::begin()
+{
+  // Serial.begin(baudRate);
+  Commands::begin( &Serial);
+}
+
+/**
+ * @brief loop - try and get characters for the command line
+ *  (will process commands if a complete line is received)
+ * 
+ */
+void SerialCmd::loop()
+{
+   while (Serial.available()) {  // there is a character ready
+    int ch = Serial.read();    
+    if (ch == -1) return; // shouldn't happen, but...
+    if (ch == '\r') Serial.println(" ");
+    Serial.print((char)ch);
+    recvdChar(ch);
+  }
+} // end of loop
+
