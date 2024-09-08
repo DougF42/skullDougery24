@@ -127,16 +127,18 @@ bool Servos::setServoAngle(int id, SERVO_SETING_t pos)
 
     switch (id)
     {
-    case (JAW_SERVO):
-    case (ROT_SERVO):
-    case (LEFT_SERVO):
-    case (RIGHT_SERVO):
-    case (LEYE_SERVO):
-    case (REYE_SERVO):
-        // TOOD: MAP degrees to microseconds
+    case (JAW_SERVO):  // angle in degrees
+    case (ROT_SERVO):  // angle in degrees
+    case (LEFT_SERVO):   // angle in degrees
+    case (RIGHT_SERVO):  // angle in degrees
+    case (LEYE_SERVO): // percentage of brightness
+    case (REYE_SERVO): // percentage of brightness
         Prefs::getServoTimes(id, &minPwm, &maxPwm);
         Prefs::getServoAngles(id, &minAngle, &maxAngle);
+        if (pos < minAngle) pos=minAngle;
+        if (pos > maxAngle) pos=maxAngle;
         pwmVal=map(pos, minAngle,maxAngle, minPwm, maxPwm);
+        
         hw716.writeMicroseconds(id, pwmVal);
         servoList[id].lastPos=pos;
         return (true);

@@ -3,24 +3,41 @@
  */
 #ifndef C_O_N_F_I_G__H
 #define  C_O_N_F_I_G__H
+#include "math.h"
 
 // This needs to be global...
 typedef int SERVO_SETING_t;
 typedef long SERVO_PWN_t;
 
+#define RAD2DEG(__rad__)  M_PI/__rad__
+#define DEG2RAD(__deg__)  __deg__/M_PI
 
-// Settable PREFRENCES
+// - - - Settable PREFRENCES - - - - 
 #define FIRMWARE_VERSION "0.0.1"
 #define FLASH_VERSION_NO    1
 #define SSID_DEF         "defnet"
 #define PASS_DEF         "iknowits42"
-#define  NAME_DEF        "Skull"
+#define NAME_DEF         "Skull"
 #define PORTNO_DEF        23
 
 
-/* HARDWARE PINS*/
-#define SERVO_I2C_CONTROL_PIN  21
-#define SERVO_I2C_CLOCK_PIN    22
+/* - - - - HARDWARE PINS - - - - */
+// I2C... talk to servo driver.
+#define SERVO_I2C_DATA_PIN   GPIO_PIN_21
+#define SERVO_I2C_CLOCK_PIN  GPIO_PIN_22
+
+// Sound (I2S) output
+#define SOUND_CLK_PIN    GPIO_PIN_25
+#define SOUND_DATA_PIN   GPIO_PIN_26
+#define SOUND_WS_PIN     GPIO_PIN_27
+
+
+// SPI (for SD card)
+#define SDI_CS_PIN       GPIO_PIN_5
+#define SDI_MOSI_PIN     GPIO_PIN_23
+#define SDI_CLK_PIN      GPIO_PIN_18
+#define SDI_MISO_PIN     GPIO_PIN_19
+
 
 // PWM Frequency (Servos usually like 50 hz)
 #define SERVO_PWM_FREQ         50
@@ -29,13 +46,13 @@ typedef long SERVO_PWN_t;
 // They correspond DIRECTLY to the id parameter
 //    in the Servos clas, and the index to
 //    the servoList[] array.
-#define JAW_SERVO            0
-#define ROT_SERVO            1
-#define LEFT_SERVO           2
-#define RIGHT_SERVO          3
-#define LEYE_SERVO           4
-#define REYE_SERVO           5
-#define NO_OF_SERVOS         6
+#define RIGHT_SERVO       0
+#define LEFT_SERVO        1
+#define ROT_SERVO         2
+#define JAW_SERVO         3
+#define LEYE_SERVO        4
+#define REYE_SERVO        5
+#define NO_OF_SERVOS      6
 
 // Convert Servo number to a name (for output messages)
 extern String ServoToName(int id);

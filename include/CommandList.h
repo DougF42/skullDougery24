@@ -47,14 +47,30 @@ NOTE: Special...
 
 static cmdList_t cmdList[]=
 {
-  {"?",      "?        - this help list", 1, MAX_ARGS,             Commands::helpCmd},
-  {"help",   "help     - This help list", 1, MAX_ARGS,             Commands::helpCmd},
-  {"commit", "Commit  - commit changes to flash", 1, 1,            Commands::notImplCmd},
-  {"reboot", "Reboot  - reboot the system", 1, 1,                  Commands::reboot_cmd},
+  {COMMENT, " - - - GENERAL COMMANDS - - - - ",    1,1,            nullptr},
+  {"?",      "?        - this help list",          1, MAX_ARGS,    Commands::helpCmd},
+  {"help",   "help     - This help list",          1, MAX_ARGS,    Commands::helpCmd},
+  {"commit", "Commit   - commit changes to flash", 1, 1,           Prefs::commit_cmd},
+  {"prefs",  "prefs   - display prefrences",       1, 1,           Prefs::dump_cmd},
+  {"servos", "servos - display servo limits",      1, 1,           Commands::notImplCmd},
+  {"reset",  "reset    - reset flash to defaults", 1,1,            Prefs::reset_flash_cmd},
+  {"reboot", "Reboot   - reboot the system",       1, 1,           Commands::reboot_cmd},
+  {COMMENT,   " ",                                 1, 1,           Commands::notImplCmd},
+  {COMMENT,  " - - - SERVO LIMIT SETTINGS - - -",  1, 1,           Commands::notImplCmd},
+  {COMMENT,  " Valid <servo> names are:  rot, jaw, leye, reye, left, right", 1, 1, Commands::notImplCmd},
+  {"setpwm ","setpwm <servo> <min_pwm_on_time> <max_pwm_on_time> (in uSecs)", 3,3,Servos::ServoSetPwmlimitsCmd},
+  {"setAngle","setAngle <servo> <minAngle> <maxAngle>  (in degrees",        3,3,Servos::ServoAnglelimitsCmd},
+  {"servo ",   "servo <servo> <minAngle> <maxAngle>    set actual pwm (in degrees0)", 3,3,Servos::ServoPosCmd},
+  {COMMENT,   " ",                                  1, 1,          Commands::notImplCmd},
+  {COMMENT,   "- - - - KINEMATICS - - - - - ",      1, 1,          Commands::notImplCmd},
+  {"rot",     " rot  <angle>   Set rotation",       2, 2,          Commands::notImplCmd},
+  {"leye",    " leye <percent> <bright>  set left eye",      3, 3, Commands::notImplCmd},
+  {"reye",    " reye <percet> <bright>   set right eye",     3, 3, Commands::notImplCmd},
+  {"eyes",    " eyes <direction>  <bright>   set both eyes", 3, 3, Commands::notImplCmd},
+  {"jaw",     " jaw <angle>   set the jaw",         2, 2,          Commands::notImplCmd},
+  {"tilt",    " tilt <angle>  set the tilt angle",  2, 2,          Commands::notImplCmd},
+  {"nod",     " nod  <angle>  set the nod angle",   2, 2,          Commands::notImplCmd},
+  {"pose",    " pose <tileAngle> <nodAngle  set mod AND tilt angle", 2, 2, Commands::notImplCmd},
 
-  {COMMENT,   " - - - SERVO LIMIT SETTINGS - - - -", 1, 1,          nullptr},
-  {COMMENT,   " Valid <servo> names:  rot, jaw, leye, reye, tiltnod1, tiltnod2"},
-  {"pwm ",    "pwm <servo> <minAngle> <maxAngle> ", 3,3,Servos::ServoSetPwmlimitsCmd},
-
-  {"END",     "END",            0,0,                           Commands::notImplCmd},  // The 0 minTokCount indicates end-of-list
+  {"END",     "END",                                1,1,           Commands::notImplCmd},  // The 0 minTokCount indicates end-of-list
 };

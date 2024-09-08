@@ -4,9 +4,11 @@
 #include "Prefs.h"
 #include "nvs.h"
 
-// Declare static membeers of 'Prefs'
-// NOTE: These are NOT the default value for each parameter... see config.h
+// Declare static members of 'Prefs'
+Preferences *Prefs::preferences;
+
 bool Prefs::alreadyInited = false; // flag -prevent multiple inits
+
 // Each parameter has storage AND has a 'changed' flag
 int Prefs::versionNo = 0;
 bool Prefs::versionChanged = false;
