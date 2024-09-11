@@ -53,6 +53,24 @@ Prefs::~Prefs() {
 }
 
 /**
+ * @brief Print a string left justified in a fixed-width field
+ *    (padd it with trailing spaces)
+ * 
+ * @param outStream - the output device
+ * @param s         - the string
+ * @param width     - how wide is the field?
+ */
+void Prefs::pad(Stream *outStream, String s, int width)
+  {
+    int l=s.length();
+    outStream->print(s);
+    for (int idx=0; idx<width-l; idx++)
+    {
+      outStream->print(" ");
+    }
+  }
+
+/**
  * @brief Command to dump current prefrences
  * 
  * @param outStream 
@@ -61,6 +79,7 @@ Prefs::~Prefs() {
  */
 void Prefs::dump_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
+  bool changeFlag= (versionChanged || ssid_changed || pass_changed || name_changed || portno_changed);
   outStream->print("Flash Version: "); outStream->println(versionNo);
   outStream->print("SSID:          "); outStream->println(pref_ssid);
   outStream->print("PASS:          "); outStream->println(pref_pass);
@@ -69,17 +88,19 @@ void Prefs::dump_cmd(Stream *outStream, int tokCnt, char **tokens)
 
   for (int id=0; id<NO_OF_SERVOS; id++)
   {
+    changeFlag |= servoLimits[id].limits_changed;
     outStream->print("Servo no ");outStream->print(id);
     
-    outStream->print("  ");  outStream->print(ServoToName( id));
-    outStream->print(" pwm from: "); outStream->print(servoLimits[id].minimum);
+    outStream->print(" (");  pad(outStream, ServoToName( id)+")", 7);
+    outStream->print(" PWM: "); outStream->print(servoLimits[id].minimum);
     outStream->print("  To  "); outStream->print(servoLimits[id].maximum);
-    outStream->println(" (micrseconds)");
 
-    outStream->print("        Angle limts from "); outStream->print(servoLimits[id].minAngle) ;
-    outStream->print(" To  ");outStream->print(servoLimits[id].maxAngle); outStream->println("Degrees);");
-    OK_RESPONSE;
+    outStream->print(" angle: "); outStream->print(servoLimits[id].minAngle) ;
+    outStream->print(" To  ");outStream->print(servoLimits[id].maxAngle); outStream->println(" Degrees);");
   }
+
+  outStream->print("There are "); outStream->print( (changeFlag)?"": "NO"); outStream->println(" changes pending");
+  outStream->println(OK_RESPONSE);
   return;
 }
 
@@ -97,7 +118,7 @@ void Prefs::dump_cmd(Stream *outStream, int tokCnt, char **tokens)
     #ifdef VERBOSE_RESPONSES
     outStream->println("Prefrences have been saved");
     #endif
-    OK_RESPONSE;
+    outStream->println(OK_RESPONSE);
  }
 
 
@@ -107,7 +128,7 @@ void Prefs::reset_flash_cmd(Stream *outStream, int tokCnt, char **tokens)
   #ifdef VERBOSE_RESPONSES
   outStream->println("Flash has been reset to defaults");
   #endif
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
 }
 
 
@@ -138,7 +159,7 @@ void Prefs::pref_ssid_cmd(Stream *outStream, int tokCnt, char **tokens)
   else
     outStream->println(" ");
 #endif
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
 }
 
 
@@ -164,7 +185,7 @@ void Prefs::pref_pass_cmd(Stream *outStream, int tokCnt, char **tokens)
       outStream->println(" ");
   outStream->print("Password: "); outStream->println(pref_pass);
 #endif
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
 }
 
 
@@ -183,7 +204,7 @@ void Prefs::pref_alexa_cmd(Stream *outStream, int tokCnt, char **tokens)
     name_changed=true;
   }
   #ifdef VERBOSE_RESPONSES
-    outStream->print("SSID: "); outStream->print(pref_name); 
+    outStream->print("Alexa name: "); outStream->print(pref_name); 
     if (tokCnt==2) 
     { 
       outStream->println(" changed");
@@ -191,7 +212,7 @@ void Prefs::pref_alexa_cmd(Stream *outStream, int tokCnt, char **tokens)
       outStream->println(" ");
     }
   #endif
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
 }
 
 
@@ -213,7 +234,7 @@ void Prefs::prefUdpPort_cmd(Stream *outStream, int tokCnt, char **tokens)
 #ifdef VERBOSE_RESPONSES
       outStream->println(" Argument is not a valid port number ");
 #endif
-      ERR_RESPONSE;
+      outStream->println(ERR_RESPONSE);
       return;
     }
     pref_portno = newport;
@@ -227,7 +248,7 @@ void Prefs::prefUdpPort_cmd(Stream *outStream, int tokCnt, char **tokens)
   else
     outStream->println(" ");
 #endif
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
 }
 
 /**
@@ -320,15 +341,23 @@ void Prefs::readAllValues(bool forceFlag)
     portno_changed = false;
   }
 
+  // Assume no changes to servos (Yea, I'm an optimist)
+  for (int i=0; i<NO_OF_SERVOS; i++)
+  {
+    servoLimits[i].limits_changed=false;
+  }
+
   // - - - - JAW
   int res;
   res = preferences->getBytes(JAW_KEY, &servoLimits[JAW_SERVO], sizeof(ServoLimits_t));
 
   if (versionChanged || (res == 0))
     {
-      servoLimits[ROT_SERVO].minimum = DEF_JAW_MIN;
-      servoLimits[ROT_SERVO].maximum = DEF_JAW_MAX;
-      servoLimits[ROT_SERVO].limits_changed = true;
+      servoLimits[JAW_SERVO].minimum = DEF_JAW_MIN;
+      servoLimits[JAW_SERVO].maximum = DEF_JAW_MAX;
+      servoLimits[JAW_SERVO].minAngle = DEF_JAW_ANGMIN;
+      servoLimits[JAW_SERVO].maxAngle = DEF_JAW_ANGMAX;
+      servoLimits[JAW_SERVO].limits_changed = true;
     }
 
   // - - - - ROTATE
@@ -338,6 +367,8 @@ void Prefs::readAllValues(bool forceFlag)
     {
       servoLimits[ROT_SERVO].minimum = DEF_ROT_MIN;
       servoLimits[ROT_SERVO].maximum = DEF_ROT_MAX;
+      servoLimits[ROT_SERVO].minAngle = DEF_ROT_ANGMIN;
+      servoLimits[ROT_SERVO].maxAngle = DEF_ROT_ANGMAX;
       servoLimits[ROT_SERVO].limits_changed = true;
     }
 
@@ -348,6 +379,8 @@ void Prefs::readAllValues(bool forceFlag)
     {
       servoLimits[LEFT_SERVO].minimum = DEF_LEFT_MIN;
       servoLimits[LEFT_SERVO].maximum = DEF_LEFT_MAX;
+      servoLimits[LEFT_SERVO].minAngle = DEF_LEFT_ANGMIN;
+      servoLimits[LEFT_SERVO].maxAngle = DEF_LEFT_ANGMAX;
       servoLimits[LEFT_SERVO].limits_changed = true;
     }
 
@@ -359,18 +392,22 @@ void Prefs::readAllValues(bool forceFlag)
     {
       servoLimits[RIGHT_SERVO].minimum = DEF_RIGHT_MIN;
       servoLimits[RIGHT_SERVO].maximum = DEF_RIGHT_MAX;
+      servoLimits[RIGHT_SERVO].minAngle = DEF_RIGHT_ANGMIN;
+      servoLimits[RIGHT_SERVO].maxAngle = DEF_RIGHT_ANGMAX;      
       servoLimits[RIGHT_SERVO].limits_changed = true;
     }
 
 
     // - - - - LEYE
-  res = preferences->getBytes(LEFT_KEY, &servoLimits[LEFT_SERVO], sizeof(ServoLimits_t));
+  res = preferences->getBytes(LEFT_KEY, &servoLimits[LEYE_SERVO], sizeof(ServoLimits_t));
 
   if (versionChanged || (res == 0))
     {
-      servoLimits[LEFT_SERVO].minimum = DEF_LEFT_MIN;
-      servoLimits[LEFT_SERVO].maximum = DEF_LEFT_MAX;
-      servoLimits[LEFT_SERVO].limits_changed = true;
+      servoLimits[LEYE_SERVO].minimum = DEF_LEYE_MIN;
+      servoLimits[LEYE_SERVO].maximum = DEF_LEYE_MAX;
+      servoLimits[LEYE_SERVO].minAngle= DEF_LEYE_ANGMIN;
+      servoLimits[LEYE_SERVO].maxAngle= DEF_LEYE_ANGMAX;        
+      servoLimits[LEYE_SERVO].limits_changed = true;
     }
 
 
@@ -380,6 +417,8 @@ void Prefs::readAllValues(bool forceFlag)
     {
       servoLimits[REYE_SERVO].minimum = DEF_REYE_MIN;
       servoLimits[REYE_SERVO].maximum = DEF_REYE_MAX;
+      servoLimits[REYE_SERVO].minAngle = DEF_REYE_ANGMIN;
+      servoLimits[REYE_SERVO].maxAngle = DEF_REYE_ANGMAX;  
       servoLimits[REYE_SERVO].limits_changed = true;
     }
     commit();
@@ -420,7 +459,7 @@ void Prefs::commit()
   if (portno_changed)
   {
   preferences->putLong( PORTNO_KEY, pref_portno);
-  portno_changed = true;
+  portno_changed = false;
   }
 
   if (servoLimits[JAW_SERVO].limits_changed)
@@ -499,7 +538,7 @@ String Prefs::curtainName() {
   return (pref_name);
 }
 
-void Prefs::udpPort(uint16_t val) {
+void Prefs::udpPort(uint32_t val) {
   pref_portno=val;
   portno_changed = true;
 }

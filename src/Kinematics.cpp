@@ -167,7 +167,7 @@ void Kinematics::rot_cmd(Stream *outstream, int tokCnt, char *tokens[])
     if (Commands::decodeIntToken(outstream, "Rotation angle", tokens[1],  INT_MIN, INT_MAX, &rot))
     {
         Servos::setServoAngle(ROT_SERVO, rot);
-        outstream->println("OK");
+        outstream->println(OK_RESPONSE);
     }
 }
 
@@ -177,7 +177,7 @@ void Kinematics::jaw_cmd(Stream *outstream, int tokCnt, char *tokens[])
     if (Commands::decodeIntToken(outstream, "Rotation angle", tokens[1],  INT_MIN, INT_MAX, &rot))
     {
         Servos::setServoAngle(ROT_SERVO, rot);
-        outstream->println("OK");
+        outstream->println(OK_RESPONSE);
     }
 }
 
@@ -187,7 +187,7 @@ void Kinematics::leye_cmd(Stream *outstream, int tokCnt, char **tokens)
     if (Commands::decodeIntToken(outstream, "Brightness", tokens[1],  INT_MIN, INT_MAX, &eye))
     {
         Servos::setServoAngle(LEYE_SERVO, eye);
-        outstream->println("OK");
+        outstream->println(OK_RESPONSE);
     }
 
 }
@@ -198,7 +198,7 @@ void Kinematics::reye_cmd(Stream *outstream, int tokCnt, char **tokens)
     if (Commands::decodeIntToken(outstream, "Brightness", tokens[1],  INT_MIN, INT_MAX, &eye))
     {
         Servos::setServoAngle(REYE_SERVO, eye);
-        outstream->println("OK");
+        outstream->println(OK_RESPONSE);
     }
 
 }
@@ -229,7 +229,7 @@ void Kinematics::eyes_cmd(Stream *outstream, int tokCnt, char **tokens)
 
     reye=bright * cos(DEG2RAD(dir));
     Servos::setServoAngle(REYE_SERVO, reye);
-    
+    outstream->println(OK_RESPONSE);    
 }
 
 /**
@@ -243,7 +243,7 @@ void Kinematics::pose_cmd(Stream *outstream, int tokCnt, char **tokens)
 {
     // NOD angle...
     
-
+        outstream->println(ERR_RESPONSE);
 }
 
 

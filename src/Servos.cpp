@@ -197,7 +197,7 @@ void Servos::ServoSetPwmlimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
         #ifdef VERBOSE_RESPONSES
         outStream->println("Invalid servo id");
         #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
         return;
     }
 
@@ -208,18 +208,18 @@ void Servos::ServoSetPwmlimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
         #ifdef VERBOSE_RESPONSES
         outStream->println("Invalid value for minimum pwm. Range is 0..4095");
         #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
         return;
     }
 
     int smax;
-    if (! Commands::decodeIntToken(outStream, "setlimit",  tokens[2], 0,4095, &smin))
+    if (! Commands::decodeIntToken(outStream, "setlimit",  tokens[3], 0,4095, &smax))
     {
     
         #ifdef VERBOSE_RESPONSES
         outStream->println("Invalid value for minimum pwm. Range is 0..4095");
         #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
         return;
     }
 
@@ -227,8 +227,9 @@ void Servos::ServoSetPwmlimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
     { 
         #ifdef VERBOSE_RESPONSES
         outStream->println("Invalid range - min is greater than (or equal to) max");
+        outStream->print("Values are "); outStream->print(smin); outStream->print(" "); outStream->println(smax);
         #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
         return;
     }
 
@@ -240,7 +241,7 @@ void Servos::ServoSetPwmlimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
     outStream->print(" MIN PWM is ");   outStream->print(smin); 
     outStream->print(" MAX PWM is ");   outStream->println(smax);
     #endif
-    OK_RESPONSE;
+    outStream->println(OK_RESPONSE);
     return;
 }
 
@@ -262,7 +263,7 @@ void Servos::ServoAnglelimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
     #ifdef VERBOSE_RESPONSES        
         outStream->println("Invalid servo id");
         #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
         return;
     }
 
@@ -274,7 +275,7 @@ void Servos::ServoAnglelimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
 #ifdef VERBOSE_RESPONSES
         outStream->println("Angle out-of-range. Must be -180 thru 180");
 #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
     }
 
     int smax;
@@ -283,7 +284,7 @@ void Servos::ServoAnglelimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
 #ifdef VERBOSE_RESPONSES
         outStream->println("Angle out-of-range. Must be -180 thru 180");
 #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
     }
     Prefs::setServoAngles(id, smin, smax);
 
@@ -291,7 +292,7 @@ void Servos::ServoAnglelimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
     outStream->print("MIN angle is ");   outStream->print(smin); 
     outStream->print(" MAX angle is ");   outStream->println(smax);    
 #endif
-    OK_RESPONSE;
+    outStream->println(OK_RESPONSE);
 
     return;
 }
@@ -314,21 +315,26 @@ void Servos::ServoPosCmd(Stream *outStream, int tokcnt, char **tokens)
         #ifdef VERBOSE_RESPONSES
         outStream->println("Invalid servo id");
         #endif
-        ERR_RESPONSE;
+        outStream->println(ERR_RESPONSE);
         return;
     }
 
     int reqPos;
     int minPwm, maxPwm;
-    Commands::decodeIntToken( outStream, "new position", tokens[2], 0, 4096, &reqPos);
-    Prefs::getServoPWM(id, &minPwm, &maxPwm);
+    if (!Commands::decodeIntToken( outStream, "new position", tokens[2], 0, 4096, &reqPos))
+    {
+        // Error reported by decode function - just return.
+        return;
+    }
+
+    Prefs::getServoPWM(id, &minPwm, &maxPwm); 
     if (reqPos < minPwm) reqPos=minPwm;
     if (reqPos > maxPwm) reqPos=maxPwm;
     hw716.setPWM(id, 0, reqPos);
 
     #ifdef VERBOSE_RESPONSES
-    outStream->print("position set to "); outStream->print(reqPos);
+    outStream->print("position set to "); outStream->println(reqPos);
     #endif
-    OK_RESPONSE;
+    outStream->println(OK_RESPONSE);
 }
 

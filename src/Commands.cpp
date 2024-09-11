@@ -46,7 +46,7 @@ void Commands::helpCmd(Stream *outStream, int tokCnt, char **tokens) {
   }
   outStream->println("END HELP");
   outStream->println();
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
 }
 
 
@@ -69,7 +69,7 @@ void Commands::notImplCmd(Stream *outStream, int tokCnt, char **tokens)
     outStream->print(" is '");     outStream->print(tokens[idx]);  
     outStream->println("'");
   }
-  ERR_RESPONSE;
+  outStream->println(ERR_RESPONSE);
 } 
 
 
@@ -82,7 +82,7 @@ void Commands::cmd_status(Stream *outStream, int tokCnt, char **tokens)
 // Reboot the processor NOW
 void Commands::reboot_cmd(Stream *outStream, int tokCnt, char **tokens) {
   outStream->println("Recognize reboot cmd.");
-  OK_RESPONSE;
+  outStream->println(OK_RESPONSE);
   delay(1000);
   ESP.restart();
 }
@@ -98,13 +98,8 @@ Commands::~Commands() {
 
 
 // Run-time setup
-void Commands::begin(Stream *thisIoStream) {
-  Serial.println("Set up commands. Stream test:");
-  vTaskDelay(1000);
-  thisIoStream->println("OKAY");
-  Serial.println(" Now you see me...");
-  Serial.println("finished test");
-  vTaskDelay(1000);
+void Commands::begin(Stream *thisIoStream) 
+{
   thisStream = thisIoStream;
   nxtInBuffer=0;
 }
@@ -179,6 +174,7 @@ void Commands::tokenize()
 
 const char *msg1 = "ER: Unknown command";
 
+
 /**
  * @brief Find the matching command (if any) and execute it.
  *   (report unknown command...)
@@ -191,15 +187,21 @@ void Commands::dispatch(int tokCnt, char **tokens)
   {
     if (0 != strcasecmp(tokens[0], cmdList[cmdidx].name))
       continue;
+
     if (0 == strcmp(tokens[0], COMMENT))
       continue;
+
     if ((tokCnt < cmdList[cmdidx].minTokCount) || (tokCnt > cmdList[cmdidx].maxTokCount))
       continue;
+
     // Right command, right arg count - GOT IT!
     cmdList[cmdidx].funct(thisStream, tokCnt, tokens);
     return;
   }
+  #ifdef VERBOSE_RESPONSES
   thisStream->println("ERROR: Command not found");
+  #endif
+  thisStream->println(ERR_RESPONSE);
   return;
 }
 
@@ -242,23 +244,33 @@ void Commands::dispatch(int tokCnt, char **tokens)
 
     if (errno != 0)
     { // convert failed - out of range
+#ifdef VERBOSE_RESPONSES
       outStream->print(label);
       outStream->println(" Not a valid number");
+#endif
+      outStream->println(ERR_RESPONSE);
       return (false);
     }
 
     if ((endPtr == nullptr) || (*endPtr != '\0'))
     { // Extra chars after the numbers
+#ifdef VERBOSE_RESPONSES
       outStream->print(label);
       outStream->println("Extra characters after the number!");
+#endif
+      outStream->println(ERR_RESPONSE);
       return (false);
     }
 
     if ((res < minVal) || (res > maxVal))
     { // Out of range
+#ifdef VERBOSE_RESPONSES
       outStream->print(label);
       outStream->println("Value is out of range");
+#endif
+      outStream->println(ERR_RESPONSE);
     }
+    *val = res;
     return (true); // Good value
   }
   
@@ -284,22 +296,31 @@ void Commands::dispatch(int tokCnt, char **tokens)
 
     if (errno != 0)
     { // convert failed - bad value
+#ifdef VERBOSE_RESPONSES
       outStream->print(label);
       outStream->println(" Not a valid number");
+#endif
+      outStream->println(ERR_RESPONSE);
       return (false);
     }
 
     if ((endPtr == nullptr) || (*endPtr != '\0'))
     { // Extra chars after the numbers
+#ifdef VERBOSE_RESPONSES
       outStream->print(label);
       outStream->println("Extra characters after the number!");
+#endif
+      outStream->println(ERR_RESPONSE);
       return (false);
     }
 
     if ((res < minVal) || (res > maxVal))
     { // Out of range
+#ifdef VERBOSE_RESPONSES
       outStream->print(label);
       outStream->println("Value is out of range");
+#endif
+      outStream->println(ERR_RESPONSE);
     }
     return (true); // Good value
   }

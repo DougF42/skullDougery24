@@ -44,6 +44,7 @@ class Prefs
     static String getAString(const char *key);
     static int getANumber(const char *key);
     static void AllPrefsToDefault();
+    static void pad(Stream *outStream, String s, int width);
 
   public:
     Prefs();   // dont call intializer - call 'setup' instead!
@@ -71,7 +72,7 @@ class Prefs
     static void curtainName(String str);
     static String curtainName();
 
-    static void udpPort(uint16_t portno);
+    static void udpPort(uint32_t portno);
     static uint16_t  udpPort();
 
     static bool setServoPWM(int id, int min, int max);

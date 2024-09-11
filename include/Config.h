@@ -11,7 +11,7 @@
 
 // - - - Settable PREFRENCES - - - - 
 #define FIRMWARE_VERSION "0.0.1"
-#define FLASH_VERSION_NO    1
+#define FLASH_VERSION_NO    3
 #define SSID_DEF         "defnet"
 #define PASS_DEF         "iknowits42"
 #define NAME_DEF         "Skull"
@@ -24,8 +24,8 @@
 // If Defined, then an explanation of any error message
 //    is output.
 #define VERBOSE_RESPONSES 
-#define  OK_RESPONSE  outStream->println("*OK")
-#define ERR_RESPONSE outStream->println("*ERR")
+#define  OK_RESPONSE ("*OK")
+#define ERR_RESPONSE ("*ERR")
 
 /* - - - - HARDWARE PINS - - - - */
 // I2C... talk to servo driver.
@@ -63,18 +63,37 @@
 // Convert Servo number to a name (for output messages)
 extern String ServoToName(int id);
 
-// Default Limits (Based on HS-318 servo)
+// Default Limits (Based on HS-317 servo)
+// Note: _MIN and _MAX are servo settings range 0..4095
+// Note: _ANGMIN and _ANGMAX are angles +- 180
 #define DEF_JAW_MIN          500
 #define DEF_JAW_MAX         2600
+#define DEF_JAW_ANGMIN         0
+#define DEF_JAW_ANGMAX        90
+
 #define DEF_ROT_MIN          500
 #define DEF_ROT_MAX         2600
+#define DEF_ROT_ANGMIN        -90
+#define DEF_ROT_ANGMAX         90
+
 #define DEF_LEFT_MIN         500
 #define DEF_LEFT_MAX        2600
+#define DEF_LEFT_ANGMIN       -45
+#define DEF_LEFT_ANGMAX        45
+
 #define DEF_RIGHT_MIN         500
 #define DEF_RIGHT_MAX        2600
+#define DEF_RIGHT_ANGMIN      -45
+#define DEF_RIGHT_ANGMAX       45
+
 #define DEF_LEYE_MIN         500
 #define DEF_LEYE_MAX        2600
+#define DEF_LEYE_ANGMIN      -20
+#define DEF_LEYE_ANGMAX       20
+
 #define DEF_REYE_MIN         500
 #define DEF_REYE_MAX        2600
+#define DEF_REYE_ANGMIN      -20
+#define DEF_REYE_ANGMAX       20
 
 #endif
