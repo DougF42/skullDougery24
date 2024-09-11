@@ -9,47 +9,39 @@
  * @copyright Copyright (c) 2024
  *
  * LOGIC:
- *   The servo has an operating range (MIN/MAX) in microseconds. 
- * In addition, we record the angle at these limits.
- *   These numbers are stored in FLASH, and can only be set/read
- * by command (internal routines do not need to set these).
- * 
- * The result is that position inputs are in degrees, and this 
- * class converts the angle into the appropraite PWM on-time
- * internally (Thank you Bill!).
+ *   The servo driver (driven by HW716 chip) is operated at 50 hz.
+ *   POSition limits are defined in the range 0...4096  (int)
+ *   ANGLES are limited to 0 +/- 180    (int)
  *        
  */
 
 #ifndef S_E_R_V_O_S__H
 #define S_E_R_V_O_S__H
-#include <Arduino.h>
 #include "Config.h"
 #include <Wire.h>
 #include <Adafruit_PWMServoDriver.h>
-
 
 class Servos
 {
 private:
     static Adafruit_PWMServoDriver hw716;
-    // Note: The index of the servoList is configured 
     typedef struct 
     {
         bool ServoIsDefined;
-        SERVO_SETING_t lastPos;     
+        int lastPos;     
     } servoList_t;
-    
-     static servoList_t servoList[NO_OF_SERVOS];
+
+    static int decodeId(const char *str);
+    static servoList_t servoList[NO_OF_SERVOS];
 
 public:
-
     Servos();
     ~Servos();
     static void begin();
-    static int decodeId(const char *str);
-    static bool getMinMaxAngles(int id, SERVO_SETING_t *min, SERVO_SETING_t *max);
-    static bool setServoAngle(int id, SERVO_SETING_t pos);
-    static SERVO_SETING_t getServoAngle(int id);
+
+    static bool getMinMaxAngles(int id, int *min, int *max);
+    static bool setServoAngle(int id, int pos);
+    static int getServoAngle(int id);
 
     static void ServoSetPwmlimitsCmd(Stream *outStream, int argcnt, char **argList);
     static void ServoAnglelimitsCmd(Stream *outStream, int argcnt, char **argList);

@@ -1,6 +1,7 @@
 /**
  * Store and Retrieve parameters from flash
  */
+#include "Config.h"
 #include "Prefs.h"
 #include "nvs.h"
 
@@ -54,29 +55,30 @@ Prefs::~Prefs() {
 /**
  * @brief Command to dump current prefrences
  * 
- * @param outstream 
+ * @param outStream 
  * @param tokCnt 
  * @param tokens 
  */
-void Prefs::dump_cmd(Stream *outstream, int tokCnt, char **tokens)
+void Prefs::dump_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
-  outstream->print("Flash Version: "); outstream->println(versionNo);
-  outstream->print("SSID:          "); outstream->println(pref_ssid);
-  outstream->print("PASS:          "); outstream->println(pref_pass);
-  outstream->print("Alexa Name:    "); outstream->println(pref_name);
-  outstream->print("UDP Port:      "); outstream->println(pref_portno);
+  outStream->print("Flash Version: "); outStream->println(versionNo);
+  outStream->print("SSID:          "); outStream->println(pref_ssid);
+  outStream->print("PASS:          "); outStream->println(pref_pass);
+  outStream->print("Alexa Name:    "); outStream->println(pref_name);
+  outStream->print("UDP Port:      "); outStream->println(pref_portno);
 
   for (int id=0; id<NO_OF_SERVOS; id++)
   {
-    outstream->print("Servo no ");outstream->print(id);
+    outStream->print("Servo no ");outStream->print(id);
     
-    outstream->print("  ");  outstream->print(ServoToName( id));
-    outstream->print(" pwm from: "); outstream->print(servoLimits[id].minimum);
-    outstream->print("  To  "); outstream->print(servoLimits[id].maximum);
-    outstream->println(" (micrseconds)");
+    outStream->print("  ");  outStream->print(ServoToName( id));
+    outStream->print(" pwm from: "); outStream->print(servoLimits[id].minimum);
+    outStream->print("  To  "); outStream->print(servoLimits[id].maximum);
+    outStream->println(" (micrseconds)");
 
-    outstream->print("        Angle limts from "); outstream->print(servoLimits[id].minAngle) ;
-    outstream->print(" To  ");outstream->print(servoLimits[id].maxAngle); outstream->println("Degrees);");
+    outStream->print("        Angle limts from "); outStream->print(servoLimits[id].minAngle) ;
+    outStream->print(" To  ");outStream->print(servoLimits[id].maxAngle); outStream->println("Degrees);");
+    OK_RESPONSE;
   }
   return;
 }
@@ -85,108 +87,148 @@ void Prefs::dump_cmd(Stream *outstream, int tokCnt, char **tokens)
 /**
  * @brief Commit any prefrence changes to flash
  * 
- * @param outstream - where to send the result
+ * @param outStream - where to send the result
  * @param tokCnt    - how many tokens? 1 means get it, 2 means set it
  * @param tokens    - list of tokens
  */
- void Prefs::commit_cmd(Stream *outstream, int tokCnt, char **tokens)
+ void Prefs::commit_cmd(Stream *outStream, int tokCnt, char **tokens)
  {
     commit();
-    outstream->println("Prefrences have been saved");
+    #ifdef VERBOSE_RESPONSES
+    outStream->println("Prefrences have been saved");
+    #endif
+    OK_RESPONSE;
  }
 
 
-void Prefs::reset_flash_cmd(Stream *outstream, int tokCnt, char **tokens)
+void Prefs::reset_flash_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
   readAllValues(true);
-  outstream->println("Flash has been reset to defaults");
+  #ifdef VERBOSE_RESPONSES
+  outStream->println("Flash has been reset to defaults");
+  #endif
+  OK_RESPONSE;
 }
 
 
 /**
  * @brief command to get (or set) the ssid string
+ *    ssid <name>    (2 tokens) change the ssid
+ *    ssid           (1 token) get the current ssid
+ * NOTE: If changed, this will require a restart to take effect.
+ * DONT forget to COMMIT your change!
  * 
- * @param outstream - where to send the result
+ * @param outStream - where to send the result
  * @param tokCnt    - how many tokens? 1 means get it, 2 means set it
  * @param tokens    - list of tokens
  */
-void Prefs::pref_ssid_cmd(Stream *outstream, int tokCnt, char **tokens)
+void Prefs::pref_ssid_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
-  if (tokCnt==2)
+  if (tokCnt == 2)
   {
-    pref_ssid=tokens[1];
-    ssid_changed=true;
-    outstream->print("SSID: "); outstream->print(pref_ssid); outstream->println(" changed");
-  } else {
-    outstream->print("SSID: "); outstream->println(pref_ssid);
+    pref_ssid = tokens[1];
+    ssid_changed = true;
   }
+
+#ifdef VERBOSE_RESPONSES
+  outStream->print("SSID: ");
+  outStream->print(pref_ssid);
+  if (tokCnt == 2)
+    outStream->print("CHANGED");
+  else
+    outStream->println(" ");
+#endif
+  OK_RESPONSE;
 }
+
 
 /**
  * @brief command to get (or set) the wifi password 
  * 
- * @param outstream - where to send the result
+ * @param outStream - where to send the result
  * @param tokCnt    - how many tokens? 1 means get it, 2 means set it
  * @param tokens    - list of tokens
  */
-void Prefs::pref_pass_cmd(Stream *outstream, int tokCnt, char **tokens)
+void Prefs::pref_pass_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
   if (tokCnt==2)
   {
     pref_pass=tokens[1];
     pass_changed=true;
-    outstream->print("Password: "); outstream->print(pref_pass); outstream->println(" changed");
   }
-  outstream->print("Password: "); outstream->println(pref_pass);
+#ifdef VERBOSE_RESPONSES
+    outStream->print("Password: "); outStream->print(pref_pass); 
+    if (tokCnt==2) 
+      outStream->println(" changed");
+    else
+      outStream->println(" ");
+  outStream->print("Password: "); outStream->println(pref_pass);
+#endif
+  OK_RESPONSE;
 }
 
 
 /**
  * @brief command to get (or set) Alexa's name for this device
  * 
- * @param outstream - where to send the result
+ * @param outStream - where to send the result
  * @param tokCnt    - how many tokens? 1 means get it, 2 means set it
  * @param tokens    - list of tokens
  */
-void Prefs::pref_alexa_cmd(Stream *outstream, int tokCnt, char **tokens)
+void Prefs::pref_alexa_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
   if (tokCnt==2)
   {
-    pref_name=tokens[1];
+    pref_name = tokens[1];
     name_changed=true;
-    outstream->print("SSID: "); outstream->print(pref_name); outstream->println(" changed");
   }
-  outstream->print("SSID: "); outstream->println(pref_name);
+  #ifdef VERBOSE_RESPONSES
+    outStream->print("SSID: "); outStream->print(pref_name); 
+    if (tokCnt==2) 
+    { 
+      outStream->println(" changed");
+    } else {
+      outStream->println(" ");
+    }
+  #endif
+  OK_RESPONSE;
 }
 
 
 /**
  * @brief command to get (or set) the UDP port number
  * 
- * @param outstream - where to send the result
+ * @param outStream - where to send the result
  * @param tokCnt    - how many tokens? 1 means get it, 2 means set it
  * @param tokens    - list of tokens
  */
-void Prefs::prefUdpPort_cmd(Stream *outstream, int tokCnt, char **tokens)
+void Prefs::prefUdpPort_cmd(Stream *outStream, int tokCnt, char **tokens)
 {
-  if (tokCnt==2)
+  if (tokCnt == 2)
   {
-    errno=0;
-    long newport=strtol(tokens[1], nullptr, 10);
-    if ((errno!=0) || (newport<=0) || (newport> 65536))
+    errno = 0;
+    long newport = strtol(tokens[1], nullptr, 10);
+    if ((errno != 0) || (newport <= 0) || (newport > 65536))
     {
-      outstream->println(" Argument is not a valid port number ");
+#ifdef VERBOSE_RESPONSES
+      outStream->println(" Argument is not a valid port number ");
+#endif
+      ERR_RESPONSE;
       return;
     }
-    pref_portno    = newport;
+    pref_portno = newport;
     portno_changed = true;
-
-    outstream->print("UDP Port: "); outstream->print(pref_portno); outstream->println(" changed");
-  } else {
-    outstream->print("UDP_PORT: "); outstream->println(pref_portno);
   }
+#ifdef VERBOSE_RESPONSES
+  outStream->print("UDP_PORT: ");
+  outStream->println(pref_portno);
+  if (tokCnt == 2)
+    outStream->println(" changed");
+  else
+    outStream->println(" ");
+#endif
+  OK_RESPONSE;
 }
-
 
 /**
  * @brief We only want this ONCE!
@@ -457,12 +499,12 @@ String Prefs::curtainName() {
   return (pref_name);
 }
 
-void Prefs::udpPort(long val) {
+void Prefs::udpPort(uint16_t val) {
   pref_portno=val;
   portno_changed = true;
 }
 
-long Prefs::udpPort() {
+uint16_t Prefs::udpPort() {
   return(pref_portno);
 }
 
@@ -471,10 +513,10 @@ long Prefs::udpPort() {
  * @brief Set a servo's min/max PWM on times
  *  
  * @param id   - index of the servo
- * @param min  - min limit to set
- * @param max  - max limit to set
+ * @param min  - min limit to set (0..4095)
+ * @param max  - max limit to set (0..4095)
  */
-bool  Prefs::setServoTimes(int id, SERVO_PWN_t min, SERVO_PWN_t max)
+bool  Prefs::setServoPWM(int id, int min, int max)
 {
   if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
   servoLimits[id].minimum = min;
@@ -483,7 +525,16 @@ bool  Prefs::setServoTimes(int id, SERVO_PWN_t min, SERVO_PWN_t max)
   return(true);
 }
 
-bool Prefs::getServoTimes(int id, SERVO_PWN_t *minVal, SERVO_PWN_t *maxVal)
+/**
+ * @brief Retrieve the servo's min/max PWM on time.
+ * 
+ * @param id 
+ * @param minVal ptr to storage for min limit (0...4096)
+ * @param maxVal ptr to storage for max limit (0...4096)
+ * @return true   Normal return
+ * @return false  Invlaid ID
+ */
+bool Prefs::getServoPWM(int id, int *minVal, int *maxVal)
 {
   if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
   *minVal=servoLimits[id].minimum;
@@ -498,7 +549,7 @@ bool Prefs::getServoTimes(int id, SERVO_PWN_t *minVal, SERVO_PWN_t *maxVal)
  * @param min  - min limit to set
  * @param max  - max limit to set
  */
-bool  Prefs::setServoAngles(SERVO_SETING_t id, SERVO_SETING_t min, SERVO_SETING_t max)
+bool  Prefs::setServoAngles(int id, int min, int max)
 {
   if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
   servoLimits[id].minAngle = min;
@@ -508,7 +559,7 @@ bool  Prefs::setServoAngles(SERVO_SETING_t id, SERVO_SETING_t min, SERVO_SETING_
 }
 
 
-  bool Prefs::getServoAngles(int id,  SERVO_SETING_t *minAngle, SERVO_SETING_t *maxAngle)
+  bool Prefs::getServoAngles(int id,  int *minAngle, int *maxAngle)
   {
     if ( (id<0) || (id > NO_OF_SERVOS) ) return(false); //out of range.
     *minAngle = servoLimits[id].minAngle;

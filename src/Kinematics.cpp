@@ -35,7 +35,7 @@ Kinematics::~Kinematics()
  * 
  * @param angle - desired angle in degrees
  */
-void Kinematics::rot(SERVO_SETING_t angle)
+void Kinematics::rot(int angle)
 {
     Servos::setServoAngle(ROT_SERVO, angle);
     return;
@@ -47,7 +47,7 @@ void Kinematics::rot(SERVO_SETING_t angle)
  *  
  * @param angle - desired angle in degrees.
  */
-void Kinematics::jaw(SERVO_SETING_t angle)
+void Kinematics::jaw(int angle)
 {
     Servos::setServoAngle(JAW_SERVO, angle);
     return;
@@ -84,9 +84,9 @@ void Kinematics::reye(int bright)
  * @param angle      - the direction the eye are looking (Degrees)
  * @param brightness - how intense are the eyes?
  */
-void Kinematics::eyes(SERVO_SETING_t angle, SERVO_SETING_t brightness)
+void Kinematics::eyes(int angle, int brightness)
 {
-    SERVO_SETING_t eye;
+    int eye;
     eye = brightness * sin(DEG2RAD(angle));
     Servos::setServoAngle(LEYE_SERVO, eye);
     eye=  brightness * cos(angle);
@@ -100,9 +100,9 @@ void Kinematics::eyes(SERVO_SETING_t angle, SERVO_SETING_t brightness)
  * @param direction - set to the direction (in degrees)
  * @param bright    - set to the brightness (percentage)
  */
-void Kinematics::getEyes(SERVO_SETING_t *direction, SERVO_SETING_t *bright)
+void Kinematics::getEyes(int *direction, int *bright)
 {
-    SERVO_SETING_t leye, reye;
+    int leye, reye;
     leye=Servos::getServoAngle(LEYE_SERVO);
     reye=Servos::getServoAngle(REYE_SERVO);
     *bright    =  sqrt(leye*leye+reye*reye);
@@ -117,7 +117,7 @@ void Kinematics::getEyes(SERVO_SETING_t *direction, SERVO_SETING_t *bright)
 // Length of servo arm
 #define ARM_LEN   1.0
 
-void Kinematics::pose(SERVO_SETING_t tilt_angle, SERVO_SETING_t nod_angle)
+void Kinematics::pose(int tilt_angle, int nod_angle)
 {
     double req_dist_left;
     double req_dist_right;

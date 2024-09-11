@@ -39,7 +39,7 @@ NOTE: Special...
  * @brief The list of valid commands...
  *    (remember, this is NOT part of the class... it stands alone!)
  * NOTE:
- *     LAST entry must have a minTokCount of 0 - this indicates end-of-list
+ *     LAST entry ** must ** have a minTokCount of 0 - this indicates end-of-list
  * 
  * NOTE: 'Header' entries: 
  *   if the command is the macro COMMENT, then the dispatch routine ignores it.
@@ -58,7 +58,7 @@ static cmdList_t cmdList[]=
   {COMMENT,   " ",                                 1, 1,           Commands::notImplCmd},
   {COMMENT,  " - - - SERVO LIMIT SETTINGS - - -",  1, 1,           Commands::notImplCmd},
   {COMMENT,  " Valid <servo> names are:  rot, jaw, leye, reye, left, right", 1, 1, Commands::notImplCmd},
-  {"setpwm ","setpwm <servo> <min_pwm_on_time> <max_pwm_on_time> (in uSecs)", 3,3,Servos::ServoSetPwmlimitsCmd},
+  {"setpwm ","setpwm <servo> <min_pwm_on_time> <max_pwm_on_time> (0...4095)", 3,3,Servos::ServoSetPwmlimitsCmd},
   {"setAngle","setAngle <servo> <minAngle> <maxAngle>  (in degrees",        3,3,Servos::ServoAnglelimitsCmd},
   {"servo ",   "servo <servo> <minAngle> <maxAngle>    set actual pwm (in degrees0)", 3,3,Servos::ServoPosCmd},
   {COMMENT,   " ",                                  1, 1,          Commands::notImplCmd},
@@ -72,5 +72,5 @@ static cmdList_t cmdList[]=
   {"nod",     " nod  <angle>  set the nod angle",   2, 2,          Commands::notImplCmd},
   {"pose",    " pose <tileAngle> <nodAngle  set mod AND tilt angle", 2, 2, Commands::notImplCmd},
 
-  {"END",     "END",                                1,1,           Commands::notImplCmd},  // The 0 minTokCount indicates end-of-list
+  {"END",     "END",                                0,0,           Commands::notImplCmd},  // The 0 minTokCount indicates end-of-list
 };

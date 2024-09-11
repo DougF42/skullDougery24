@@ -3,7 +3,6 @@
  *
  *(By implementing a child of 'Commands')
  */
-#include <Arduino.h>
 #include "Config.h"
 #include "Commands.h"
 

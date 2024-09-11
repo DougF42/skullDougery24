@@ -3,11 +3,8 @@
  */
 #ifndef C_O_N_F_I_G__H
 #define  C_O_N_F_I_G__H
+#include "Arduino.h"
 #include "math.h"
-
-// This needs to be global...
-typedef int SERVO_SETING_t;
-typedef long SERVO_PWN_t;
 
 #define RAD2DEG(__rad__)  M_PI/__rad__
 #define DEG2RAD(__deg__)  __deg__/M_PI
@@ -20,6 +17,15 @@ typedef long SERVO_PWN_t;
 #define NAME_DEF         "Skull"
 #define PORTNO_DEF        23
 
+// For commands:
+//  if NOT defined, then only 'OK' or 'ERR' are output
+// as command responses (unless the command is for a 
+// specific value)
+// If Defined, then an explanation of any error message
+//    is output.
+#define VERBOSE_RESPONSES 
+#define  OK_RESPONSE  outStream->println("*OK")
+#define ERR_RESPONSE outStream->println("*ERR")
 
 /* - - - - HARDWARE PINS - - - - */
 // I2C... talk to servo driver.
@@ -43,7 +49,7 @@ typedef long SERVO_PWN_t;
 #define SERVO_PWM_FREQ         50
 
 // These are the port numbers on the HW-170.
-// They correspond DIRECTLY to the id parameter
+// They correspond DIRECTLY to the ID parameter
 //    in the Servos clas, and the index to
 //    the servoList[] array.
 #define RIGHT_SERVO       0

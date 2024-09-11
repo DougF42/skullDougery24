@@ -16,7 +16,6 @@
  */
 #ifndef K_I_N_E_M_A_T_I_C_S___H
 #define K_I_N_E_M_A_T_I_C_S___H
-#include <Arduino.h>
 #include "Config.h"
 
 class Kinematics
@@ -27,15 +26,15 @@ class Kinematics
         ~Kinematics();
         
         // Internal function calls
-        void rot(SERVO_SETING_t angle);
-        void jaw(SERVO_SETING_t angle);
+        void rot(int angle);
+        void jaw(int angle);
 
         void leye( int bright);
         void reye( int bright);
-        void eyes( SERVO_SETING_t directAngle,   int bright);
-        void getEyes(SERVO_SETING_t *direction,  int *bright);
+        void eyes( int directAngle,   int bright);
+        void getEyes(int *direction,  int *bright);
 
-        void pose(SERVO_SETING_t tilt_angle, SERVO_SETING_t nod_angle);
+        void pose(int tilt_angle, int nod_angle);
         void tilt(int angle);
         void nod(int angle);
 

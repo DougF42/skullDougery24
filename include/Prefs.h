@@ -2,7 +2,6 @@
 /*
  * Store (and retrieve) preferences from flash memory
  */
-#include <Arduino.h>
 #include <Preferences.h>
 #include "Config.h"
 
@@ -30,10 +29,10 @@ class Prefs
   public:
     typedef struct
     {
-      SERVO_PWN_t minimum;   // shortest allowed pwm on time (uSecs)
-      SERVO_SETING_t minAngle;  // angle corresponding to minimum
-      SERVO_PWN_t maximum;   // longest allowed pwm on time (uSecs)
-      SERVO_SETING_t maxAngle;  // angle corresponding to max
+      int minimum;   // shortest allowed pwm on time (uSecs)
+      int minAngle;  // angle corresponding to minimum
+      int maximum;   // longest allowed pwm on time (uSecs)
+      int maxAngle;  // angle corresponding to max
       bool limits_changed; // flag -true if any limit or angle changed
     } ServoLimits_t;
 
@@ -43,7 +42,7 @@ class Prefs
 
     static void readAllValues(bool forceFlag);
     static String getAString(const char *key);
-    static int32_t getANumber(const char *key);
+    static int getANumber(const char *key);
     static void AllPrefsToDefault();
 
   public:
@@ -72,14 +71,14 @@ class Prefs
     static void curtainName(String str);
     static String curtainName();
 
-    static void udpPort(long portno);
-    static long  udpPort();
+    static void udpPort(uint16_t portno);
+    static uint16_t  udpPort();
 
-    static bool setServoTimes(int id, SERVO_PWN_t min, SERVO_PWN_t max);
-    static bool getServoTimes(int id, SERVO_PWN_t *min, SERVO_PWN_t *max);
+    static bool setServoPWM(int id, int min, int max);
+    static bool getServoPWM(int id, int *min, int *max);
     
-    static bool setServoAngles(int id, SERVO_SETING_t minAngle, SERVO_SETING_t maxAngle);
-    static bool getServoAngles(int id,  SERVO_SETING_t *minAngle, SERVO_SETING_t *maxAngle);
+    static bool setServoAngles(int id, int minAngle, int maxAngle);
+    static bool getServoAngles(int id,  int *minAngle, int *maxAngle);
 
 
 };

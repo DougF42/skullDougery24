@@ -4,7 +4,6 @@
  * This ALSO implements the touch switch that
  * opens/closes the curtains.
  */
-#include <Arduino.h>
 #include "Config.h"
 #include "SerialCmd.h"
 #include "Commands.h"
@@ -23,8 +22,7 @@ SerialCmd::~SerialCmd()
  * 
  */
 void SerialCmd::begin()
-{
-  // Serial.begin(baudRate);
+{  
   Commands::begin( &Serial);
 }
 

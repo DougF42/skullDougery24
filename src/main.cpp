@@ -1,5 +1,3 @@
-#include <Arduino.h>
-
 #include "SerialCmd.h"
 #include "Servos.h"
 // NOTE: THIS WORKS AROUND A LIBRARY PRESENT BUG - DO NOT REMOVE
@@ -57,6 +55,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(119200); 
   servos.begin();
+  usbcmds.begin();
 }
 
 void loop() {
