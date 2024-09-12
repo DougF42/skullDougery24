@@ -52,10 +52,10 @@
 // They correspond DIRECTLY to the ID parameter
 //    in the Servos clas, and the index to
 //    the servoList[] array.
-#define RIGHT_SERVO       0
-#define LEFT_SERVO        1
-#define ROT_SERVO         2
-#define JAW_SERVO         3
+#define ROT_SERVO         0
+#define JAW_SERVO         1
+#define RIGHT_SERVO       2
+#define LEFT_SERVO        3
 #define LEYE_SERVO        4
 #define REYE_SERVO        5
 #define NO_OF_SERVOS      6
