@@ -20,6 +20,7 @@
 #include "Servos.h"
 #include "Prefs.h"
 #include "Commands.h"
+#include <climits>
 
 /* STATIC DECLARATIONS */
 Adafruit_PWMServoDriver Servos::hw716;
@@ -50,6 +51,16 @@ void Servos::begin()
     hw716.begin(); // start the servo driver
     // hw715.setOscillatorFrequency(27000000); IF we need to trim HW716 osc freq
     hw716.setPWMFreq(SERVO_PWM_FREQ);
+
+    // Now set the servos to their 'midpoints'
+    for (int idx=0; idx<NO_OF_SERVOS; idx++)
+    {
+        int minPwm, maxPwm;
+
+        Prefs::getServoPWM(idx, &minPwm, &maxPwm);
+        int midpoint= (maxPwm-minPwm)/2 + minPwm;
+        setServoPosition(idx, midpoint);    
+    }
 }
 
 
@@ -89,94 +100,89 @@ int Servos::decodeId(const char *str)
 }
 
 
-
 /**
- * @brief Front-end for 'Prefs' to get the min/max angles (in degrees)) for a given servo
+ * @brief Convert servo number (see config.h) to a string.
  * 
- * @param id    - identifies the servo
- * @param min   - min angle allowed
- * @param max   - max angle allowed
- * @return true  - We retrieved the angles
- * @return false  - Error - not a valid servo number
+ * @param id 
+ * @return String 
  */
-bool Servos::getMinMaxAngles(int id, int *minAngle, int *maxAngle)
+String Servos::ServoToName(int id, bool lowercaseFlag)
 {
-    switch (id)
-    {
-    case (JAW_SERVO): // Single Servos
-    case (ROT_SERVO):
-    case (LEFT_SERVO):
-    case (RIGHT_SERVO):
-    case (LEYE_SERVO):
-    case (REYE_SERVO):
-        Prefs::getServoAngles(id, minAngle, maxAngle);
-        break;
-
-    case (-1):
-        return (false);
-    }
-    return (true);
-}
-
-
-/**
- * @brief Set the indicated servo to a position (angle +/- 90)
- *
- * @param id <ServoId_t>- name of servo to set
- * @param pos desired position (in degrees... 0 +/- 90)
- * @return true - normal.
- * @return false - error in input (nivalidi servo id)
- */
-bool Servos::setServoAngle(int id, int pos)
-{
-    int minAngle,maxAngle;
-    int minPwm,maxPwm=0;
-    int pwmVal;
-
-    switch (id)
-    {
-    case (JAW_SERVO):  // angle in degrees
-    case (ROT_SERVO):  // angle in degrees
-    case (LEFT_SERVO):   // angle in degrees
-    case (RIGHT_SERVO):  // angle in degrees
-    case (LEYE_SERVO): // percentage of brightness
-    case (REYE_SERVO): // percentage of brightness
-        Prefs::getServoPWM(id, &minPwm, &maxPwm);
-        Prefs::getServoAngles(id, &minAngle, &maxAngle);
-        if (pos < minAngle) pos=minAngle;  // limit range
-        if (pos > maxAngle) pos=maxAngle;
-        pwmVal=map(pos, minAngle,maxAngle, minPwm, maxPwm);
-        
-        hw716.setPin(id, pwmVal, false);
-        servoList[id].lastPos=pos;
-        return (true);
-
-    default:
-        return(false);
-    }
-}
-
-
-/**
- * @brief Return the current position of the microcontroller
- *
- * @param id - the ID of the servo. ONLY SINGLE SERVOS ARE ACCEPTED!
- * @return int The current angle (in degrees 0 +/- 90). 
- *        INT_MAX if servo-id is invalid.
- */
-int Servos::getServoAngle(int id)
-{
+    String res = "UNKNOWN";
     switch (id)
     {
     case (JAW_SERVO):
+        res = "JAW";
+        break;
+
     case (ROT_SERVO):
+        res = "ROT";
+        break;
+
     case (LEFT_SERVO):
+        res = "LEFT";
+        break;
+
     case (RIGHT_SERVO):
+        res = "RIGHT";
+        break;
+
     case (LEYE_SERVO):
-    case (REYE_SERVO):        
-        return(servoList[id].lastPos);
+        res = "LEYE";
+        break;
+
+    case (REYE_SERVO):
+        res = "REYE";
+        break;
+
+    default:
+        res = "UNKNOWN_ID";
+        break;
     }
-    return (INT_MAX);
+
+    if (lowercaseFlag)
+        res.toLowerCase();
+    return (res);
+}
+
+/**
+ * @brief get the current servo setting (from memory)
+ *      if id is invalid, we return INT_MAX
+ * @param id   - Servo number
+ * @return int - the last set value (0..4095)
+ */
+int Servos::getServoPosition(int id)
+{
+    if ((id < 0) || (id > NO_OF_SERVOS))
+    {
+        return (INT_MAX);
+    }
+    return(servoList[id].lastPos);
+}
+
+
+/**
+ * @brief set the servo to a given position (0...4096)
+ *       if val is out-of-range, we limit it appropriatly
+ * @param id  -
+ * @param val
+ * @return true  - normal return
+ * @return false
+ */
+bool Servos::setServoPosition(int id, int val)
+{
+    if ((id < 0) || (id > NO_OF_SERVOS))
+    {
+        return (false);
+    }
+    int minPwm, maxPwm;
+    Prefs::getServoPWM(id, &minPwm, &maxPwm);
+    if (val < minPwm) val=minPwm;
+    if (val > maxPwm) val=maxPwm;
+    servoList[id].lastPos = val;
+    hw716.setPin(id, servoList[id].lastPos);
+     
+    return (true);
 }
 
 
@@ -246,60 +252,9 @@ void Servos::ServoSetPwmlimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
 }
 
 
-/**
- * @brief set the servo's Anglularlimits
- *      Note: Argcnt must be 2 or 3
- *   Format 1:  setlimits servoId minPwm maxPwm
- * @param outStream - where to send the response
- * @param tokCnt    - how many tokens?
- * @param argList   - list of pointers to tokens
- */
-void Servos::ServoAnglelimitsCmd(Stream *outStream, int tokCnt, char *tokens[])
-{
-    int id = 0; // Decode the ID
-    id = decodeId(tokens[1]);
-    if (id < 0)
-    {
-    #ifdef VERBOSE_RESPONSES        
-        outStream->println("Invalid servo id");
-        #endif
-        outStream->println(ERR_RESPONSE);
-        return;
-    }
-
-    // put
-    int smin;
-
-    if (!Commands::decodeIntToken(outStream, "setlimit", tokens[2], -180, 180, &smin))
-    {
-#ifdef VERBOSE_RESPONSES
-        outStream->println("Angle out-of-range. Must be -180 thru 180");
-#endif
-        outStream->println(ERR_RESPONSE);
-    }
-
-    int smax;
-    if (!Commands::decodeIntToken(outStream, "setlimit", tokens[3], -180, 180, &smax))
-    {
-#ifdef VERBOSE_RESPONSES
-        outStream->println("Angle out-of-range. Must be -180 thru 180");
-#endif
-        outStream->println(ERR_RESPONSE);
-    }
-    Prefs::setServoAngles(id, smin, smax);
-
-#ifdef VERBOSE_RESPONSES
-    outStream->print("MIN angle is ");   outStream->print(smin); 
-    outStream->print(" MAX angle is ");   outStream->println(smax);    
-#endif
-    outStream->println(OK_RESPONSE);
-
-    return;
-}
-
 
 /**
- * @brief Set the position of a secific servo
+ * @brief Command to Set the position of a secific servo
  *     cmd <id> <pwm>
  *        pwm is 0..4096
  * @param outStream - where to send the response
@@ -327,11 +282,12 @@ void Servos::ServoPosCmd(Stream *outStream, int tokcnt, char **tokens)
         return;
     }
 
+
     Prefs::getServoPWM(id, &minPwm, &maxPwm); 
     if (reqPos < minPwm) reqPos=minPwm;
     if (reqPos > maxPwm) reqPos=maxPwm;
-    hw716.setPWM(id, 0, reqPos);
 
+    hw716.setPin(id, reqPos);
     #ifdef VERBOSE_RESPONSES
     outStream->print("position set to "); outStream->println(reqPos);
     #endif

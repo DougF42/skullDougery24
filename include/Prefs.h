@@ -44,7 +44,7 @@ class Prefs
     static String getAString(const char *key);
     static int getANumber(const char *key);
     static void AllPrefsToDefault();
-    static void pad(Stream *outStream, String s, int width);
+
 
   public:
     Prefs();   // dont call intializer - call 'setup' instead!
@@ -52,7 +52,8 @@ class Prefs
  
     static void setup();
     static void commit();
-
+    
+    static void pad(Stream *outStream, String s, int width);
     static void dump_cmd(Stream *outstream, int tokCnt, char **tokens);
     static void reset_flash_cmd(Stream *outstream, int tokCnt, char **tokens);
     static void commit_cmd(Stream *outstream, int tokCnt, char **tokens);

@@ -4,6 +4,7 @@
 #include "Config.h"
 #include "Prefs.h"
 #include "nvs.h"
+#include "Servos.h"
 
 // Declare static members of 'Prefs'
 Preferences *Prefs::preferences;
@@ -91,7 +92,7 @@ void Prefs::dump_cmd(Stream *outStream, int tokCnt, char **tokens)
     changeFlag |= servoLimits[id].limits_changed;
     outStream->print("Servo no ");outStream->print(id);
     
-    outStream->print(" (");  pad(outStream, ServoToName( id)+")", 7);
+    outStream->print(" (");  pad(outStream, Servos::ServoToName( id)+")", 7);
     outStream->print(" PWM: "); outStream->print(servoLimits[id].minimum);
     outStream->print("  To  "); outStream->print(servoLimits[id].maximum);
 

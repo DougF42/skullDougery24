@@ -11,6 +11,7 @@
 #include "Prefs.h"
 #include "Commands.h"
 #include "Servos.h"
+#include "Kinematics.h"
 
 // Maximum number of arguments for any command.
 #define MAX_ARGS  5
@@ -52,6 +53,7 @@ static cmdList_t cmdList[]=
   {"help",   "help     - This help list",          1, MAX_ARGS,    Commands::helpCmd},
   {"commit", "Commit   - commit changes to flash", 1, 1,           Prefs::commit_cmd},
   {"prefs",  "prefs   - display prefrences",       1, 1,           Prefs::dump_cmd},
+  {"stats",  "stats   - display current status",   1, 1,           Kinematics::stat_cmd},
   {"reset",  "reset    - reset flash to defaults", 1,1,            Prefs::reset_flash_cmd},
   {"reboot", "Reboot   - reboot the system",       1, 1,           Commands::reboot_cmd},
   {COMMENT,  " ",                                  1,1,             nullptr},
@@ -65,7 +67,7 @@ static cmdList_t cmdList[]=
   {COMMENT,  " - - - SERVO LIMIT SETTINGS - - -",  1, 1,           nullptr},
   {COMMENT,  " Valid <servo> names are:  rot, jaw, leye, reye, left, right", 1, 1, Commands::notImplCmd},
   {"setpwm","setpwm <servo> <min_pwm_on_time> <max_pwm_on_time> (0...4095)", 4,4,Servos::ServoSetPwmlimitsCmd},
-  {"setAngle","setAngle <servo> <minAngle> <maxAngle>  (in degrees",         4,4,Servos::ServoAnglelimitsCmd},
+  {"setAngle","setAngle <servo> <minAngle> <maxAngle>  (in degrees",         4,4,Kinematics::SetServoAnglelimitsCmd},
   {"servo",   "servo <servo> <minAngle> <maxAngle>    set actual pwm (in degrees0)", 3,3,Servos::ServoPosCmd},
   
   {COMMENT,   " ",                                  1, 1,          nullptr},
