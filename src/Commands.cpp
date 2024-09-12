@@ -110,6 +110,18 @@ void Commands::flush() {
   return;
 }
 
+
+/**
+ * @brief Remvoe one char from the buffer
+ * 
+ */
+  void Commands::backspace()
+  {
+    if (nxtInBuffer==0) return; // no chars to remove
+    nxtInBuffer--;    
+  }
+
+
 /**
  * @brief Add this character to the buffer.
  * If we see an EOL, then process the line
@@ -147,7 +159,6 @@ void Commands::recvStr(char *inbuf, int len)
     recvdChar(*bptr++);
   }
 }
-
 
 /**
  * @brief Build a list of pointers to 
@@ -200,6 +211,9 @@ void Commands::dispatch(int tokCnt, char **tokens)
   }
   #ifdef VERBOSE_RESPONSES
   thisStream->println("ERROR: Command not found");
+    thisStream->print("Error: command '"); thisStream->print(tokens[0]);  thisStream->print("' with ");
+    thisStream->print(strlen(tokens[0])); thisStream->print(" Characters and ");
+    thisStream->print(tokCnt); thisStream->println(" args not found");
   #endif
   thisStream->println(ERR_RESPONSE);
   return;

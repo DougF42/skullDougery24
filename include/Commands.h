@@ -71,6 +71,7 @@ public:
   void recvdChar(char ch);
   void recvStr(char *ch, int len);
   void flush();
+  void backspace();
 
   // Identifies a 'EOL' character. 
   virtual bool isThisEOL(char ch) {

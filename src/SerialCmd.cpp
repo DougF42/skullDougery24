@@ -34,9 +34,16 @@ void SerialCmd::begin()
 void SerialCmd::loop()
 {
    while (Serial.available()) {  // there is a character ready
-    int ch = Serial.read();    
+    int ch = Serial.read();
+
     if (ch == -1) return; // shouldn't happen, but...
     if (ch == '\r') Serial.println(" ");
+    if (ch == 8)  // backspace (^H)
+    {
+      backspace();
+      Serial.print((char)127); // backspace? Delete?
+      continue;
+    }
     Serial.print((char)ch);
     recvdChar(ch);
   }
