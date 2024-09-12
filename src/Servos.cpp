@@ -282,7 +282,6 @@ void Servos::ServoPosCmd(Stream *outStream, int tokcnt, char **tokens)
         return;
     }
 
-
     Prefs::getServoPWM(id, &minPwm, &maxPwm); 
     if (reqPos < minPwm) reqPos=minPwm;
     if (reqPos > maxPwm) reqPos=maxPwm;

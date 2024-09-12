@@ -42,9 +42,9 @@ public:
     static bool setServoPosition(int id, int val);
     static int decodeId(const char *str);
     static String ServoToName(int id, bool lowerCaseFlag=false);
+
     static void ServoSetPwmlimitsCmd(Stream *outStream, int argcnt, char **argList);
     static void ServoPosCmd(Stream *outStream, int argcnt,  char **argList);
-    static void ServoStatusCmd(Stream *outStream, int argcnt, char **argList);
 };
 
 #endif

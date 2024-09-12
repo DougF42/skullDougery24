@@ -66,20 +66,21 @@ static cmdList_t cmdList[]=
   {COMMENT,   " ",                                 1, 1,           nullptr},
   {COMMENT,  " - - - SERVO LIMIT SETTINGS - - -",  1, 1,           nullptr},
   {COMMENT,  " Valid <servo> names are:  rot, jaw, leye, reye, left, right", 1, 1, Commands::notImplCmd},
-  {"setpwm","setpwm <servo> <min_pwm_on_time> <max_pwm_on_time> (0...4095)", 4,4,Servos::ServoSetPwmlimitsCmd},
-  {"setAngle","setAngle <servo> <minAngle> <maxAngle>  (in degrees",         4,4,Kinematics::SetServoAnglelimitsCmd},
-  {"servo",   "servo <servo> <minAngle> <maxAngle>    set actual pwm (in degrees0)", 3,3,Servos::ServoPosCmd},
+  {"setpwm", "setpwm <servo> <min_pwm_on_time> <max_pwm_on_time> (0...4095)", 4,4,Servos::ServoSetPwmlimitsCmd},
+  {"servo",  "servo <servo> <pwm>     set actual pwm (0...4096)", 2,2,Servos::ServoPosCmd},
   
   {COMMENT,   " ",                                  1, 1,          nullptr},
   {COMMENT,   "- - - - KINEMATICS - - - - - ",      1, 1,          nullptr},
-  {"rot",     " rot  <angle>   Set rotation",       2, 2,          Commands::notImplCmd},
-  {"leye",    " leye <percent> <bright>  set left eye",      3, 3, Commands::notImplCmd},
-  {"reye",    " reye <percet> <bright>   set right eye",     3, 3, Commands::notImplCmd},
-  {"eyes",    " eyes <direction>  <bright>   set both eyes", 3, 3, Commands::notImplCmd},
-  {"jaw",     " jaw <angle>   set the jaw",         2, 2,          Commands::notImplCmd},
-  {"tilt",    " tilt <angle>  set the tilt angle",  2, 2,          Commands::notImplCmd},
-  {"nod",     " nod  <angle>  set the nod angle",   2, 2,          Commands::notImplCmd},
-  {"pose",    " pose <tileAngle> <nodAngle>  set mod AND tilt angle", 2, 2, Commands::notImplCmd},
+
+   {"setAngle","setAngle <servo> <minAngle> <maxAngle>  (in degrees)",  4,4,Kinematics::SetServoAnglelimitsCmd},
+  {"rot",     " rot  <angle>   Set rotation",       2, 2,          Kinematics::rot_cmd},
+  {"leye",    " leye <percent> <bright>  set left eye",      3, 3, Kinematics::leye_cmd},
+  {"reye",    " reye <percet> <bright>   set right eye",     3, 3, Kinematics::reye_cmd},
+  {"eyes",    " eyes <direction>  <bright>   set both eyes", 3, 3, Kinematics::eyes_cmd},
+  {"jaw",     " jaw <angle>   set the jaw",         2, 2,          Kinematics::jaw_cmd},
+  {"tilt",    " tilt <angle>  set the tilt angle",  2, 2,          Kinematics::tilt_cmd},
+  {"nod",     " nod  <angle>  set the nod angle",   2, 2,          Kinematics::nod_cmd},
+  {"pose",    " pose <tileAngle> <nodAngle>  set mod AND tilt angle", 2, 2, Kinematics::pose_cmd},
 
   {"END",     "END",                                0,0,           Commands::notImplCmd},  // The 0 minTokCount indicates end-of-list
 };
